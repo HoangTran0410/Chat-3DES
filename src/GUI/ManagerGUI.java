@@ -5,12 +5,12 @@
  */
 package GUI;
 
-import java.awt.BorderLayout;
+import Utils.JTabbedPaneCloseButton;
+import Utils.LookAndFeel;
 import java.awt.HeadlessException;
-import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import javax.swing.JFrame;
@@ -23,8 +23,10 @@ import javax.swing.JOptionPane;
 public class ManagerGUI extends JFrame implements Runnable {
 
     ServerSocket socket;
-    BufferedReader br;
+    DataInputStream is;
     DataOutputStream os;
+
+    JTabbedPaneCloseButton tpClients;
 
     /**
      * Creates new form ServerGUI
@@ -34,7 +36,11 @@ public class ManagerGUI extends JFrame implements Runnable {
 
         setTitle("Chat Server");
         setResizable(false);
+        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        tpClients = new JTabbedPaneCloseButton();
+        plClientsContainer.add(tpClients);
     }
 
     @Override
@@ -48,8 +54,8 @@ public class ManagerGUI extends JFrame implements Runnable {
 
                     // Lấy tên của Client vừa nhắn tin cho Manager
                     // Có nhiều cách xử lý, đây là cách của mình
-                    br = new BufferedReader(new InputStreamReader(staffSocket.getInputStream()));
-                    String staffName = br.readLine();
+                    is = new DataInputStream(staffSocket.getInputStream());
+                    String staffName = is.readUTF();
 
                     // Tạo ChatPanel và show nó vào cái TabbedPane, khá là đơn giản
                     ChatPanel chatPanel = new ChatPanel(staffSocket, "Manager", staffName);
@@ -81,12 +87,7 @@ public class ManagerGUI extends JFrame implements Runnable {
         jLabel1 = new javax.swing.JLabel();
         txPort = new javax.swing.JTextField();
         btnStartServer = new javax.swing.JButton();
-        tpClients = new javax.swing.JTabbedPane();
-        jPanel2 = new javax.swing.JPanel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
+        plClientsContainer = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -107,46 +108,9 @@ public class ManagerGUI extends JFrame implements Runnable {
         });
         jPanel1.add(btnStartServer);
 
-        jLabel2.setFont(new java.awt.Font("Dialog", 1, 36)); // NOI18N
-        jLabel2.setText("Nhóm ...");
-
-        jLabel3.setFont(new java.awt.Font("Dialog", 1, 24)); // NOI18N
-        jLabel3.setText("Trần Văng Hoàng");
-
-        jLabel4.setFont(new java.awt.Font("Dialog", 1, 24)); // NOI18N
-        jLabel4.setText("Lưu Minh Hoàng");
-
-        jLabel5.setFont(new java.awt.Font("Dialog", 1, 24)); // NOI18N
-        jLabel5.setText("Nguyễn Diệu Hương");
-
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel5)
-                    .addComponent(jLabel4)
-                    .addComponent(jLabel3)
-                    .addComponent(jLabel2))
-                .addContainerGap(345, Short.MAX_VALUE))
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel3)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel4)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel5)
-                .addContainerGap(142, Short.MAX_VALUE))
-        );
-
-        tpClients.addTab("Welcome", jPanel2);
+        plClientsContainer.setMinimumSize(new java.awt.Dimension(0, 400));
+        plClientsContainer.setPreferredSize(new java.awt.Dimension(600, 322));
+        plClientsContainer.setLayout(new java.awt.BorderLayout());
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -155,7 +119,7 @@ public class ManagerGUI extends JFrame implements Runnable {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(tpClients)
+                    .addComponent(plClientsContainer, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -165,7 +129,7 @@ public class ManagerGUI extends JFrame implements Runnable {
                 .addContainerGap()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(tpClients)
+                .addComponent(plClientsContainer, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -205,29 +169,7 @@ public class ManagerGUI extends JFrame implements Runnable {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(ManagerGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(ManagerGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(ManagerGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(ManagerGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        //</editor-fold>
+        LookAndFeel.setSystemLookAndFeel();
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -240,13 +182,8 @@ public class ManagerGUI extends JFrame implements Runnable {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnStartServer;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JTabbedPane tpClients;
+    private javax.swing.JPanel plClientsContainer;
     private javax.swing.JTextField txPort;
     // End of variables declaration//GEN-END:variables
 }

@@ -5,10 +5,9 @@
  */
 package GUI;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Socket;
 
 /**
@@ -19,7 +18,7 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
 
     Socket socket;
     String sender, receiver;
-    BufferedReader bf;
+    DataInputStream is;
     DataOutputStream os;
 
     /**
@@ -41,7 +40,7 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
             this.receiver = receiver;
 
             //Tạo các bộ đệm để gửi và nhận tin nhắn
-            bf = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            is = new DataInputStream(socket.getInputStream());
             os = new DataOutputStream(socket.getOutputStream());
         } catch (IOException e) {
             System.out.println("Error while create Main Panel." + e.getMessage());
@@ -50,10 +49,12 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
 
     public void send(String msg) {
         try {
-            os.writeBytes(msg);
-            os.write(13);
-            os.write(10);
-            os.flush();
+            os.writeUTF(msg);
+
+            // xuống dòng, xóa bộ đệm
+            //os.write(13);
+            //os.write(10);
+            //os.flush();
         } catch (IOException ex) {
             System.out.println("Error while sendding messeger. " + ex.getMessage());
         }
@@ -66,7 +67,7 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
             try {
                 if (socket != null) {
                     String msg;
-                    while ((msg = bf.readLine()) != null) {
+                    while ((msg = is.readUTF()) != null) {
                         //Nếu có tin nhắn đến thì ghi vào lịch sử
                         txMsgHistory.append("\n" + receiver + ": " + msg);
                     }
@@ -103,7 +104,9 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
             }
         });
 
+        txMsgHistory.setEditable(false);
         txMsgHistory.setColumns(20);
+        txMsgHistory.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
         txMsgHistory.setRows(5);
         jScrollPane1.setViewportView(txMsgHistory);
 
@@ -135,29 +138,18 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendActionPerformed
+        String msg = txMsg.getText();
+
         // Kiểm tra xem người dùng nhập tin nhắn hay chưa
-        if (txMsg.getText().isEmpty()) {
+        if (msg.isEmpty()) {
             return;
         }
 
-        try {
-            // Ghi dữ liệu từ ô nhập tin nhắn vào "bộ đệm của của socket"
-            // để sau này chúng ta có thể lấy dữ liệu này từ server
-            os.writeBytes(txMsg.getText());
-
-            // Xuống Dòng + Xóa bộ đệm
-            os.write(13);
-            os.write(10);
-            os.flush();
-
-            // Ghi dữ liệu vào textArea ở phía trên
-            txMsgHistory.append("\n" + sender + ": " + txMsg.getText());
-
-            // Xóa hết tin nhắn tại ô nhập tin nhắn
-            txMsg.setText("");
-        } catch (IOException e) {
-            System.out.println("Error while sendding messeger. " + e.getMessage());
-        }
+        send(msg);
+        // Ghi dữ liệu vào textArea history
+        txMsgHistory.append("\n" + sender + ": " + msg);
+        // Xóa hết tin nhắn tại ô nhập tin nhắn
+        txMsg.setText("");
     }//GEN-LAST:event_btnSendActionPerformed
 
 

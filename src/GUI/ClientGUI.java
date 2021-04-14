@@ -5,6 +5,7 @@
  */
 package GUI;
 
+import Utils.LookAndFeel;
 import java.net.Socket;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -26,6 +27,8 @@ public class ClientGUI extends JFrame {
         initComponents();
 
         setTitle("Chat Client");
+        setResizable(false);
+        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
@@ -148,13 +151,13 @@ public class ClientGUI extends JFrame {
             port = Integer.parseInt(txPort.getText());
             name = txName.getText();
 
-            //Tạo một socket bằng ip và port ở trên
-            socket = new Socket(ip, port);
-
             //Validation
             if (name.isEmpty()) {
-                throw new Exception("Empty Name");
+                throw new Exception("Tên không được để trống");
             }
+
+            //Tạo một socket bằng ip và port ở trên
+            socket = new Socket(ip, port);
             if (socket == null) {
                 throw new Exception("Null Socket");
             }
@@ -186,28 +189,7 @@ public class ClientGUI extends JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(ClientGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(ClientGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(ClientGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(ClientGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
+        LookAndFeel.setSystemLookAndFeel();
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
