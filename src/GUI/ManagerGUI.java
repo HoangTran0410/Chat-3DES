@@ -6,6 +6,7 @@
 package GUI;
 
 import java.awt.BorderLayout;
+import java.awt.HeadlessException;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -54,18 +55,14 @@ public class ManagerGUI extends JFrame implements Runnable {
                     ChatPanel chatPanel = new ChatPanel(staffSocket, "Manager", staffName);
                     tpClients.addTab(staffName, chatPanel);
                     chatPanel.updateUI();
-                    
+
                     System.out.println("Client connected, tabcount = " + tpClients.getTabCount());
 
                     // Chạy Thread ChatPanel để kiểm tra các tin nhắn đến và đi (Đã giải thích ở phần 1)
                     Thread t = new Thread(chatPanel);
                     t.start();
                 }
-
-                // Không cần thiết cho lắm
-//                Thread.sleep(1000);
             } catch (IOException e) {
-                System.out.println(e.getMessage());
                 // Do not change this because it spawn try-catch many time while running thread!
             }
         }
@@ -176,28 +173,30 @@ public class ManagerGUI extends JFrame implements Runnable {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnStartServerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStartServerActionPerformed
-        //Cổng mặc định là 8, bạn có thể đổi thành số bạn thích
+        //Cổng mặc định là 5000, bạn có thể đổi thành số bạn thích
         int port = 5000;
+
         try {
             //Kiểm tra dữ liệu nhập vào
             port = Integer.parseInt(txPort.getText());
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this,
                     "Can't start at this port, program will use the default port=8\nDetails: " + e,
                     "Error while read Port", JOptionPane.ERROR_MESSAGE);
         }
+
         try {
             //Hiểu nôm na là chạy Server tại port này
             socket = new ServerSocket(port);
             JOptionPane.showMessageDialog(this, "Server is running at port: " + port, "Started server",
                     JOptionPane.INFORMATION_MESSAGE);
 
-        } catch (Exception e) {
+        } catch (HeadlessException | IOException e) {
             JOptionPane.showMessageDialog(this, "Details: " + e, "Start server error",
                     JOptionPane.ERROR_MESSAGE);
         }
 
-        //Chạy Server (class ServerGUI hiên tại) để kiểm tra các luồng kết nối vào server sau này
+        //Chạy Server (class ManagerGUI hiên tại) để kiểm tra các luồng kết nối vào server sau này
         Thread t = new Thread(this);
         t.start();
     }//GEN-LAST:event_btnStartServerActionPerformed

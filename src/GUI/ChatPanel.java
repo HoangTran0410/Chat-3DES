@@ -24,6 +24,10 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
 
     /**
      * Creates new form ChatPanel
+     *
+     * @param s - client's socket
+     * @param sender - sender name
+     * @param receiver - receiver name
      */
     public ChatPanel(Socket s, String sender, String receiver) {
         try {
@@ -39,7 +43,7 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
             //Tạo các bộ đệm để gửi và nhận tin nhắn
             bf = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             os = new DataOutputStream(socket.getOutputStream());
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("Error while create Main Panel." + e.getMessage());
         }
     }
@@ -61,13 +65,13 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
         while (true) {
             try {
                 if (socket != null) {
-                    String msg = "";
+                    String msg;
                     while ((msg = bf.readLine()) != null) {
                         //Nếu có tin nhắn đến thì ghi vào lịch sử
                         txMsgHistory.append("\n" + receiver + ": " + msg);
                     }
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 // Do not change this because it spawn try-catch many time while running thread!
             }
         }
@@ -151,7 +155,7 @@ public class ChatPanel extends javax.swing.JPanel implements Runnable {
 
             // Xóa hết tin nhắn tại ô nhập tin nhắn
             txMsg.setText("");
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("Error while sendding messeger. " + e.getMessage());
         }
     }//GEN-LAST:event_btnSendActionPerformed
