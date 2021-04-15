@@ -17,14 +17,26 @@ public class Des {
     public byte[] _plain;
     public byte[] _encrypted; // ENCRYPT RESULT
 
+    // Public Getters
+
+    public byte[] getEncrypted() {
+        return _encrypted;
+    }
+
     // Public Methods
 
-    public static byte[] Encrypt(byte[] plain, byte[] key) {
-        Des des = new Des();
-        des.InitializeAllKeys(key);
-        des.InitializeBlocksFromPlain(plain);
-        des.EncodeBlocks();
-        return des._encrypted;
+    public static byte[] CreateSingleKey(byte[] originalKey) {
+        // Permutes original key => Becomes 56-bit key
+        BitSet originalKeyBits = BitSet.valueOf(originalKey);
+        BitSet permutedKeyBits = Des.Permute(originalKeyBits, PERMUTED_CHOICE_1);
+        return permutedKeyBits.toByteArray();
+    }
+
+    public byte[] Encrypt(byte[] plain, byte[] key) {
+        this.InitializeSubKeys(key);
+        this.InitializeBlocksFromPlain(plain);
+        this.EncodeBlocks();
+        return this._encrypted;
     }
 
     // Private Constants
@@ -172,29 +184,26 @@ public class Des {
         return newBitSet;
     }
 
-    private void InitializeAllKeys(byte[] originalKey) {
-        BitSet originalKeyBits = BitSet.valueOf(originalKey);
-
-        // Permutes original key => Becomes 56-bit key
-        BitSet permutedKeyBits = Des.Permute(originalKeyBits, PERMUTED_CHOICE_1);
+    private void InitializeSubKeys(byte[] key) {
+        BitSet keyBits = BitSet.valueOf(key);
 
         // Split into C0, D0, which is Left half and Right half respectively, into 28-bit Keys
-        BitSet[] leftCKeys = new BitSet[17];
-        BitSet[] rightDKeys = new BitSet[17];
-        leftCKeys[0] = permutedKeyBits.get(28, 56);
-        rightDKeys[0] = permutedKeyBits.get(0, 28);
+        BitSet[] leftC = new BitSet[17];
+        BitSet[] rightD = new BitSet[17];
+        leftC[0] = keyBits.get(28, 56);
+        rightD[0] = keyBits.get(0, 28);
 
         // Shift C0 and D0 to the left for 16 times (Ci, Di), each times store as a key
         for (int i = 1; i <= 16; i++) {
-            leftCKeys[i] = BitSetUtilities.shiftLeft(leftCKeys[i - 1], KEY_LEFTSHIFT_DISTANCES[i - 1], 28);
-            rightDKeys[i] = BitSetUtilities.shiftLeft(rightDKeys[i - 1], KEY_LEFTSHIFT_DISTANCES[i - 1], 28);
+            leftC[i] = BitSetUtilities.shiftLeft(leftC[i - 1], KEY_LEFTSHIFT_DISTANCES[i - 1], 28);
+            rightD[i] = BitSetUtilities.shiftLeft(rightD[i - 1], KEY_LEFTSHIFT_DISTANCES[i - 1], 28);
         }
 
         // Finalize 16 of 28-bit Keys from Ci and Di into 48-bit Keys
         BitSet[] finalKeys = new BitSet[17];
         for (int i = 1; i <= 16; i++) {
             BitSet concatCiDi = BitSetUtilities.concatenateBitSets( // Concatenate Ci and Di
-                    28, rightDKeys[i], leftCKeys[i]
+                    28, rightD[i], leftC[i]
             );
 
             finalKeys[i] = Des.Permute(concatCiDi, PERMUTED_CHOICE_2); // Becomes 48-bit key
@@ -246,13 +255,9 @@ public class Des {
             BitSet bitOf4s = Des.Substitute(bitOf48s.get(fromIndex, toIndex), S_BOX[i]); // 6-bit into 4-bit
 
             // Concat into the 32-bit BitSet
-            if (i == S_BOX.length - 1) { // if is at starting point
-                bitOf32s = bitOf4s;
-            } else {
-                bitOf32s = BitSetUtilities.concatenateBitSets( // size goes in pattern: 4 8 12 16 20 24
-                        32 - (4 * (i + 1)), bitOf32s, bitOf4s
-                );
-            }
+            bitOf32s = i == S_BOX.length - 1 // if is at starting point
+                    ? bitOf4s
+                    : BitSetUtilities.concatenateBitSets(32 - (4 * (i + 1)), bitOf32s, bitOf4s); // size goes in pattern: 4 8 12 16 20 24
         }
 
         // Permute the 32-bit BitSet with P-Permutation, retains its size
@@ -293,11 +298,9 @@ public class Des {
 
         for (int i = 0; i < this._plainBlocks.length; i++) {
             this._encryptedBlocks[i] = EncodeBlock(this._plainBlocks[i]);
-            if (i == 0) {
-                encrypted = BitSet.valueOf(_encryptedBlocks[i]);
-            } else {
-                encrypted = BitSetUtilities.concatenateBitSets(64 * i, encrypted, BitSet.valueOf(_encryptedBlocks[i]));
-            }
+            encrypted = i == 0
+                    ? BitSet.valueOf(_encryptedBlocks[i])
+                    : BitSetUtilities.concatenateBitSets(64 * i, encrypted, BitSet.valueOf(_encryptedBlocks[i]));
         }
 
         this._encrypted = encrypted.toByteArray();
@@ -307,7 +310,9 @@ public class Des {
         String plain = "Let's go to the beach";
         String key = "mflwkero";
 
-        Des.Encrypt(plain.getBytes(), key.getBytes());
+        Des des = new Des();
+        byte[] permutedKey = Des.CreateSingleKey(key.getBytes());
+        des.Encrypt(plain.getBytes(), permutedKey);
     }
 
 }
