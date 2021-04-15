@@ -14,10 +14,21 @@ public class Des {
     public BitSet[] _keys;
     public byte[][] _plainBlocks;
     public byte[][] _encryptedBlocks;
+    public byte[] _encrypted; // ENCRYPT RESULT
 
-    // Constants
+    // Public Methods
 
-    public static final byte[] INITIAL_PERMUTATION = new byte[]{
+    public static byte[][] Encrypt(String plain, byte[] key) {
+        Des des = new Des();
+        des.InitializeAllKeys(key);
+        des.InitializeBlocksFromPlain(plain);
+        des.EncodeBlocks();
+        return des._encryptedBlocks;
+    }
+
+    // Private Constants
+
+    private static final byte[] INITIAL_PERMUTATION = new byte[]{
             58, 50, 42, 34, 26, 18, 10, 2,
             60, 52, 44, 36, 28, 20, 12, 4,
             62, 54, 46, 38, 30, 22, 14, 6,
@@ -27,7 +38,7 @@ public class Des {
             61, 53, 45, 37, 29, 21, 13, 5,
             63, 55, 47, 39, 31, 23, 15, 7,
     };
-    public static final byte[] FINAL_PERMUTATION = new byte[]{
+    private static final byte[] FINAL_PERMUTATION = new byte[]{
             40, 8, 48, 16, 56, 24, 64, 32,
             39, 7, 47, 15, 55, 23, 63, 31,
             38, 6, 46, 14, 54, 22, 62, 30,
@@ -37,7 +48,7 @@ public class Des {
             34, 2, 42, 10, 50, 18, 58, 26,
             33, 1, 41, 9, 49, 17, 57, 25
     };
-    public static final byte[] EXPANSION = new byte[]{
+    private static final byte[] EXPANSION = new byte[]{
             32, 1, 2, 3, 4, 5,
             4, 5, 6, 7, 8, 9,
             8, 9, 10, 11, 12, 13,
@@ -47,7 +58,7 @@ public class Des {
             24, 25, 26, 27, 28, 29,
             28, 29, 30, 31, 32, 1
     };
-    public static final byte[][][] S_BOX = new byte[][][]{
+    private static final byte[][][] S_BOX = new byte[][][]{
             { // S1
                     {14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7},
                     {0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8},
@@ -97,7 +108,7 @@ public class Des {
                     {2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11}
             }
     };
-    public static final byte[] P_PERMUTATION = new byte[]{
+    private static final byte[] P_PERMUTATION = new byte[]{
             16, 7, 20, 21,
             29, 12, 28, 17,
             1, 15, 23, 26,
@@ -107,7 +118,7 @@ public class Des {
             19, 13, 30, 6,
             22, 11, 4, 25
     };
-    public static final byte[] PERMUTED_CHOICE_1 = new byte[]{
+    private static final byte[] PERMUTED_CHOICE_1 = new byte[]{
             57, 49, 41, 33, 25, 17, 9,
             1, 58, 50, 42, 34, 26, 18,
             10, 2, 59, 51, 43, 35, 27,
@@ -117,7 +128,7 @@ public class Des {
             14, 6, 61, 53, 45, 37, 29,
             21, 13, 5, 28, 20, 12, 4
     };
-    public static final byte[] PERMUTED_CHOICE_2 = new byte[]{
+    private static final byte[] PERMUTED_CHOICE_2 = new byte[]{
             14, 17, 11, 24, 1, 5,
             3, 28, 15, 6, 21, 10,
             23, 19, 12, 4, 26, 8,
@@ -128,14 +139,13 @@ public class Des {
             46, 42, 50, 36, 29, 32
     };
 
-    public static final byte[] KEY_LEFTSHIFT_DISTANCES = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
+    private static final int ByteSize = 8;
+    private static final int KeySize = 64;
+    private static final byte[] KEY_LEFTSHIFT_DISTANCES = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 
-    public static final int ByteSize = 8;
-    public static final int KeySize = 64;
+    // Private Logic Methods
 
-    // Public Methods
-
-    public static BitSet Permute(BitSet originalBitSet, byte[] permuteTable) {
+    private static BitSet Permute(BitSet originalBitSet, byte[] permuteTable) {
         BitSet newBitSet = new BitSet();
 
         for (int i = 0; i < permuteTable.length; i++) {
@@ -146,7 +156,7 @@ public class Des {
         return newBitSet;
     }
 
-    public static BitSet Substitute(BitSet originalBitSet, byte[][] subBox) {
+    private static BitSet Substitute(BitSet originalBitSet, byte[][] subBox) {
         BitSet rowBits = new BitSet();
         BitSet colBits = new BitSet();
         rowBits.set(0, originalBitSet.get(0)); // left-most bit
@@ -160,8 +170,6 @@ public class Des {
         BitSet newBitSet = BitSet.valueOf(new byte[] {sBoxValue});
         return newBitSet;
     }
-
-    // Private Logic Methods
 
     private void InitializeAllKeys(byte[] originalKey) {
         BitSet originalKeyBits = BitSet.valueOf(originalKey);
@@ -250,7 +258,7 @@ public class Des {
         return bitOf32s;
     }
 
-    private BitSet EncodeBlock(byte[] block) {
+    private byte[] EncodeBlock(byte[] block) {
         BitSet bits = BitSet.valueOf(block);
 
         // Permute block (retains size of 64-bit)
@@ -273,40 +281,30 @@ public class Des {
         bits = BitSetUtilities.concatenateBitSets(32, leftL[16], rightR[16]);
         bits = Des.Permute(bits, FINAL_PERMUTATION);
 
-        return bits;
+        return bits.toByteArray();
     }
 
     private void EncodeBlocks() {
         _encryptedBlocks = new byte[this._plainBlocks.length][8];
+        BitSet encrypted = new BitSet();
 
         for (int i = 0; i < this._plainBlocks.length; i++) {
-            byte[] block = this._plainBlocks[i];
-            _encryptedBlocks[i] = EncodeBlock(block).toByteArray();
+            _encryptedBlocks[i] = EncodeBlock(this._plainBlocks[i]);
+            if (i == 0) {
+                encrypted = BitSet.valueOf(_encryptedBlocks[i]);
+            } else {
+                encrypted = BitSetUtilities.concatenateBitSets(64 * i, encrypted, BitSet.valueOf(_encryptedBlocks[i]));
+            }
         }
-    }
 
-    // TODO: HoangTran's variables, might be used
-//    FILE *out;
-//    int LEFT[][] = new int[17][32], RIGHT[][] = new int[17][32];
-//    int IPtext[] = new int[64];
-//    int EXPtext[] = new int[48];
-//    int XORtext[] = new int[48];
-//    int X[][] = new int [8][6];
-//    int X2[] = new int[32];
-//    int R[] = new int[32];
-//    int key56bit[] = new int[56];
-//    int key48bit[][] = new int[17][48];
-//    int CIPHER[] = new int[64];
-//    int ENCRYPTED[] = new int[64];
+        _encrypted = encrypted.toByteArray();
+    }
 
     public static void main(String[] args) {
         String plain = "Let's go to the beach";
         String key = "mflwkero";
 
-        Des des = new Des();
-        des.InitializeAllKeys(key.getBytes());
-        des.InitializeBlocksFromPlain(plain);
-        des.EncodeBlocks();
+        Des.Encrypt(plain, key.getBytes());
     }
 
 }
