@@ -73,4 +73,21 @@ public class BitSetUtilities {
         }
         return byteArr[0];
     }
+
+    /**
+     * http://www.java2s.com/example/java/java.util/bitset-to-binary-string.html
+     * @param bitSet
+     * @param gapAt When to add space
+     * @return
+     */
+    public static String getBinaryString(BitSet bitSet, int gapAt) {
+        StringBuilder sb = new StringBuilder(bitSet.length());
+        for (int i = bitSet.length() - 1; i >= 0; i--) {
+            sb.append(bitSet.get(i) ? 1 : 0);
+            if (i % gapAt == 0) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString().trim();
+    }
 }

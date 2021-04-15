@@ -6,15 +6,14 @@
 package TripleDES;
 
 import java.util.BitSet;
-import java.util.Scanner;
 
 /**
  * @author Hoang Tran < hoang at 99.hoangtran@gmail.com >
  */
 public class Des {
-    public byte[][] _blocks;
     public BitSet[] _keys;
-    public BitSet[] _encryptedBlocks;
+    public byte[][] _plainBlocks;
+    public byte[][] _encryptedBlocks;
 
     // Constants
 
@@ -215,7 +214,7 @@ public class Des {
             blocks[blockIndex][bitIndex++] = 0;
         }
 
-        this._blocks = blocks;
+        this._plainBlocks = blocks;
     }
 
     private BitSet DesFunction(BitSet rightBits, BitSet key) {
@@ -270,15 +269,19 @@ public class Des {
             rightR[i].xor(DesFunction(rightR[i - 1], this._keys[i]));
         }
 
+        // Concat into R16L16, then permute through IP-1
+        bits = BitSetUtilities.concatenateBitSets(32, leftL[16], rightR[16]);
+        bits = Des.Permute(bits, FINAL_PERMUTATION);
+
         return bits;
     }
 
     private void EncodeBlocks() {
-        _encryptedBlocks = new BitSet[this._blocks.length];
+        _encryptedBlocks = new byte[this._plainBlocks.length][8];
 
-        for (int i = 0; i < this._blocks.length; i++) {
-            byte[] block = this._blocks[i];
-            _encryptedBlocks[i] = EncodeBlock(block);
+        for (int i = 0; i < this._plainBlocks.length; i++) {
+            byte[] block = this._plainBlocks[i];
+            _encryptedBlocks[i] = EncodeBlock(block).toByteArray();
         }
     }
 
