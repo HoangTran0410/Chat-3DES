@@ -129,7 +129,8 @@ public class Des {
 
     public static final byte[] SHIFT_DISTANCES = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 
-    public static final int BlockSize = 8;
+    public static final int ByteSize = 8;
+    public static final int KeySize = 64;
 
     // Public Methods
 
@@ -146,20 +147,20 @@ public class Des {
     // Private Logic Methods
 
     public byte[][] InitializeBlocksFromPlain(String plain) {
-        byte[][] blocks = new byte[(int) Math.ceil(plain.length() * 1.0 / BlockSize)][];
+        byte[][] blocks = new byte[(int) Math.ceil(plain.length() * 1.0 / ByteSize)][];
         int blockIndex = 0;
         int bitIndex = 0;
         for (int i = 0; i < plain.length(); i++) {
             if (bitIndex == 0) {
-                blocks[blockIndex] = new byte[BlockSize];
+                blocks[blockIndex] = new byte[ByteSize];
             }
             blocks[blockIndex][bitIndex++] = (byte) plain.charAt(i);
-            if (bitIndex >= BlockSize) {
+            if (bitIndex >= ByteSize) {
                 blockIndex++;
                 bitIndex = 0;
             }
         }
-        for (int i = plain.length(); i % BlockSize == 0; i++) {
+        for (int i = plain.length(); i % ByteSize == 0; i++) {
             // Padding
             blocks[blockIndex][bitIndex++] = 0;
         }
@@ -170,11 +171,12 @@ public class Des {
 
     public void InitializeAllKeys(byte[] originalKey) {
         BitSet originalKeyBits = BitSet.valueOf(originalKey);
-        BitSet permutedKeyBits = new BitSet();
+        BitSet permutedKeyBits = BitSet.valueOf(originalKey);
 
         // Transform into 56-bit key
-        for (int i = 1; i < BlockSize; i++) { // goes in pattern: (7,15) , (15,23) , (23,31)
-            originalKeyBits = BitSetUtilities.shiftRight(originalKeyBits, 1, i * BlockSize - 1, i * BlockSize - 1 + BlockSize - (i - 1));
+        for (int i = 1; i <= ByteSize; i++) {
+            int fromIndex = i * ByteSize - 1 - (i - 1); // Goes in pattern: 7, 15-1, 23-2, ...
+            originalKeyBits = BitSetUtilities.shiftRight(originalKeyBits, 1, fromIndex, KeySize - 1);
         }
 
         // Permutes original key
