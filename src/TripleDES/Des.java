@@ -14,16 +14,17 @@ public class Des {
     public BitSet[] _keys;
     public byte[][] _plainBlocks;
     public byte[][] _encryptedBlocks;
+    public byte[] _plain;
     public byte[] _encrypted; // ENCRYPT RESULT
 
     // Public Methods
 
-    public static byte[][] Encrypt(String plain, byte[] key) {
+    public static byte[] Encrypt(byte[] plain, byte[] key) {
         Des des = new Des();
         des.InitializeAllKeys(key);
         des.InitializeBlocksFromPlain(plain);
         des.EncodeBlocks();
-        return des._encryptedBlocks;
+        return des._encrypted;
     }
 
     // Private Constants
@@ -200,24 +201,26 @@ public class Des {
         }
 
         // Save Keys
-        _keys = finalKeys;
+        this._keys = finalKeys;
     }
 
-    private void InitializeBlocksFromPlain(String plain) {
-        byte[][] blocks = new byte[(int) Math.ceil(plain.length() * 1.0 / ByteSize)][];
+    private void InitializeBlocksFromPlain(byte[] plain) {
+        this._plain = plain;
+
+        byte[][] blocks = new byte[(int) Math.ceil(plain.length * 1.0 / ByteSize)][];
         int blockIndex = 0;
         int bitIndex = 0;
-        for (int i = 0; i < plain.length(); i++) {
+        for (int i = 0; i < plain.length; i++) {
             if (bitIndex == 0) {
                 blocks[blockIndex] = new byte[ByteSize];
             }
-            blocks[blockIndex][bitIndex++] = (byte) plain.charAt(i);
+            blocks[blockIndex][bitIndex++] = plain[i];
             if (bitIndex >= ByteSize) {
                 blockIndex++;
                 bitIndex = 0;
             }
         }
-        for (int i = plain.length(); i % ByteSize == 0; i++) {
+        for (int i = plain.length; i % ByteSize == 0; i++) {
             // Padding
             blocks[blockIndex][bitIndex++] = 0;
         }
@@ -285,11 +288,11 @@ public class Des {
     }
 
     private void EncodeBlocks() {
-        _encryptedBlocks = new byte[this._plainBlocks.length][8];
+        this._encryptedBlocks = new byte[this._plainBlocks.length][8];
         BitSet encrypted = new BitSet();
 
         for (int i = 0; i < this._plainBlocks.length; i++) {
-            _encryptedBlocks[i] = EncodeBlock(this._plainBlocks[i]);
+            this._encryptedBlocks[i] = EncodeBlock(this._plainBlocks[i]);
             if (i == 0) {
                 encrypted = BitSet.valueOf(_encryptedBlocks[i]);
             } else {
@@ -297,14 +300,14 @@ public class Des {
             }
         }
 
-        _encrypted = encrypted.toByteArray();
+        this._encrypted = encrypted.toByteArray();
     }
 
     public static void main(String[] args) {
         String plain = "Let's go to the beach";
         String key = "mflwkero";
 
-        Des.Encrypt(plain, key.getBytes());
+        Des.Encrypt(plain.getBytes(), key.getBytes());
     }
 
 }
