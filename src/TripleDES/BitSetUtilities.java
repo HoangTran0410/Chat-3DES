@@ -65,4 +65,12 @@ public class BitSetUtilities {
 
         return finalBitSet;
     }
+
+    public static byte getSingleValue(BitSet bitSet) {
+        byte[] byteArr = bitSet.toByteArray();
+        if (byteArr.length == 0) {
+            return 0;
+        }
+        return byteArr[0];
+    }
 }
