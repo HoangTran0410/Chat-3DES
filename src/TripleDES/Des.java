@@ -14,6 +14,7 @@ import java.util.Scanner;
 public class Des {
     public byte[][] _blocks;
     public BitSet[] _keys;
+    public BitSet[] _encryptedBlocks;
 
     // Constants
 
@@ -135,16 +136,6 @@ public class Des {
 
     // Public Methods
 
-    public static String GetInputString(String prompt) {
-        System.out.print(prompt);
-        return GetInputString();
-    }
-
-    public static String GetInputString() {
-        Scanner scan = new Scanner(System.in);
-        return scan.nextLine();
-    }
-
     public static BitSet Permute(BitSet originalBitSet, byte[] permuteTable) {
         BitSet newBitSet = new BitSet();
 
@@ -158,7 +149,39 @@ public class Des {
 
     // Private Logic Methods
 
-    public byte[][] InitializeBlocksFromPlain(String plain) {
+    private void InitializeAllKeys(byte[] originalKey) {
+        BitSet originalKeyBits = BitSet.valueOf(originalKey);
+
+        // Permutes original key => Becomes 56-bit key
+        BitSet permutedKeyBits = Des.Permute(originalKeyBits, PERMUTED_CHOICE_1);
+
+        // Split into C0, D0, which is Left half and Right half respectively, into 28-bit Keys
+        BitSet[] leftCKeys = new BitSet[17];
+        BitSet[] rightDKeys = new BitSet[17];
+        leftCKeys[0] = permutedKeyBits.get(28, 56);
+        rightDKeys[0] = permutedKeyBits.get(0, 28);
+
+        // Shift C0 and D0 to the left for 16 times (Ci, Di), each times store as a key
+        for (int i = 1; i <= 16; i++) {
+            leftCKeys[i] = BitSetUtilities.shiftLeft(leftCKeys[i - 1], KEY_LEFTSHIFT_DISTANCES[i - 1], 28);
+            rightDKeys[i] = BitSetUtilities.shiftLeft(rightDKeys[i - 1], KEY_LEFTSHIFT_DISTANCES[i - 1], 28);
+        }
+
+        // Finalize 16 of 28-bit Keys from Ci and Di into 48-bit Keys
+        BitSet[] finalKeys = new BitSet[17];
+        for (int i = 1; i <= 16; i++) {
+            BitSet concatCiDi = BitSetUtilities.concatenateBitSets( // Concatenate Ci and Di
+                    28, rightDKeys[i], leftCKeys[i]
+            );
+
+            finalKeys[i] = Des.Permute(concatCiDi, PERMUTED_CHOICE_2); // Becomes 48-bit key
+        }
+
+        // Save Keys
+        _keys = finalKeys;
+    }
+
+    private void InitializeBlocksFromPlain(String plain) {
         byte[][] blocks = new byte[(int) Math.ceil(plain.length() * 1.0 / ByteSize)][];
         int blockIndex = 0;
         int bitIndex = 0;
@@ -178,39 +201,41 @@ public class Des {
         }
 
         this._blocks = blocks;
-        return blocks;
     }
 
-    public void InitializeAllKeys(byte[] originalKey) {
-        BitSet originalKeyBits = BitSet.valueOf(originalKey);
+    private BitSet DesFunction(BitSet rightBits, BitSet key) {
+        return new BitSet();
+    }
 
-        // Permutes original key => Becomes 56-bit key
-        BitSet permutedKeyBits = Des.Permute(originalKeyBits, PERMUTED_CHOICE_1);
+    private BitSet EncodeBlock(byte[] block) {
+        BitSet bits = BitSet.valueOf(block);
 
-        // Split into C0, D0, which is Left half and Right half respectively, into 28-bit Keys
-        BitSet[] leftCKeys = new BitSet[17];
-        BitSet[] rightDKeys = new BitSet[17];
+        // Permute block (retains size of 64-bit)
+        bits = Des.Permute(bits, INITIAL_PERMUTATION);
 
-        // Shift C0 and D0 to the left for 16 times (Ci, Di), each times store as a key
-        leftCKeys[0] = permutedKeyBits.get(28, 55);
-        rightDKeys[0] = permutedKeyBits.get(0, 27);
+        // Split into Left-half L0, Right-half R0
+        BitSet[] leftLBits = new BitSet[17];
+        BitSet[] rightRBits = new BitSet[17];
+        leftLBits[0] = bits.get(32, 64);
+        rightRBits[0] = bits.get(0, 32);
+
+        // Perform 16-rounds loop of function
         for (int i = 1; i <= 16; i++) {
-            leftCKeys[i] = BitSetUtilities.shiftLeft(leftCKeys[i - 1], KEY_LEFTSHIFT_DISTANCES[i - 1], 28);
-            rightDKeys[i] = BitSetUtilities.shiftLeft(rightDKeys[i - 1], KEY_LEFTSHIFT_DISTANCES[i - 1], 28);
+            leftLBits[i] = rightRBits[i - 1];
+            rightRBits[i] = BitSet.valueOf(leftLBits[i - 1].toByteArray());
+            rightRBits[i].xor(DesFunction(rightRBits[i - 1], this._keys[i]));
         }
 
-        // Finalize 16 of 28-bit Keys from Ci and Di into 48-bit Keys
-        BitSet[] finalKeys = new BitSet[16];
-        for (int i = 0; i < 16; i++) {
-            BitSet concatCiDi = BitSetUtilities.concatenateBitSets( // Concatenate Ci and Di
-                    28, rightDKeys[i + 1], leftCKeys[i + 1]
-            );
+        return bits;
+    }
 
-            finalKeys[i] = Des.Permute(concatCiDi, PERMUTED_CHOICE_2); // Becomes 48-bit key
+    private void EncodeBlocks() {
+        _encryptedBlocks = new BitSet[this._blocks.length];
+
+        for (int i = 0; i < this._blocks.length; i++) {
+            byte[] block = this._blocks[i];
+            _encryptedBlocks[i] = EncodeBlock(block);
         }
-
-        // Save Keys
-        _keys = finalKeys;
     }
 
     // TODO: HoangTran's variables, might be used
@@ -228,12 +253,13 @@ public class Des {
 //    int ENCRYPTED[] = new int[64];
 
     public static void main(String[] args) {
-        String plain = GetInputString("Enter plain: ");
-        String key = GetInputString("Enter key (8 characters): ");
+        String plain = "Let's go to the beach";
+        String key = "mflwkero";
 
         Des des = new Des();
-        des.InitializeBlocksFromPlain(plain);
         des.InitializeAllKeys(key.getBytes());
+        des.InitializeBlocksFromPlain(plain);
+        des.EncodeBlocks();
     }
 
 }
