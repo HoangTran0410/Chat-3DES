@@ -11,6 +11,7 @@ public class TripleDes {
         }
 
         _crypts[0] = _desInstances[0].Encrypt(plain, _desKeys[0]);
+        _crypts[1] = _desInstances[1].Decrypt(_crypts[0], _desKeys[1]);
     }
 
     public static void main(String[] args) {

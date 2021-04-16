@@ -5,7 +5,9 @@
  */
 package TripleDES;
 
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 
 /**
  * @author Hoang Tran < hoang at 99.hoangtran@gmail.com >
@@ -13,9 +15,12 @@ import java.util.BitSet;
 public class Des {
     public BitSet[] _keys;
     public byte[][] _plainBlocks;
+    public byte[][] _cryptBlocks;
     public byte[][] _encryptedBlocks;
+    public byte[][] _decryptedBlocks;
     public byte[] _plain;
     public byte[] _encrypted; // ENCRYPT RESULT
+    public byte[] _decrypted; // DECRYPT RESULT
 
     // Public Getters
 
@@ -41,7 +46,9 @@ public class Des {
 
     public byte[] Decrypt(byte[] crypt, byte[] key) {
         _keys = this.InitializeSubKeys(key);
-        return null;
+        _cryptBlocks = this.GenerateBlocks(crypt);
+        _decrypted = this.DecodeBlocks(_cryptBlocks, _keys);
+        return this._decrypted;
     }
 
     // Private Constants
@@ -231,7 +238,7 @@ public class Des {
                 bitIndex = 0;
             }
         }
-        for (int i = inputBits.length; i % ByteSize == 0; i++) {
+        for (int i = inputBits.length; i % ByteSize != 0; i++) {
             // Padding
             blocks[blockIndex][bitIndex++] = 0;
         }
@@ -294,6 +301,15 @@ public class Des {
         return bits.toByteArray();
     }
 
+    private byte[] DecodeBlock(byte[] block, BitSet[] keys) {
+        BitSet[] reversedKeys = new BitSet[17];
+        // Decode is essentially Encode with SubKeys in reversed order
+        for (int i = 1; i <= 16; i++) {
+            reversedKeys[i] = keys[16 - i + 1];
+        }
+        return EncodeBlock(block, reversedKeys);
+    }
+
     private byte[] EncodeBlocks(byte[][] blocks, BitSet[] keys) {
         this._encryptedBlocks = new byte[blocks.length][8];
         BitSet encrypted = new BitSet();
@@ -308,13 +324,28 @@ public class Des {
         return encrypted.toByteArray();
     }
 
+    private byte[] DecodeBlocks(byte[][] blocks, BitSet[] keys) {
+        this._decryptedBlocks = new byte[blocks.length][8];
+        BitSet decrypted = new BitSet();
+
+        for (int i = 0; i < blocks.length; i++) {
+            this._decryptedBlocks[i] = DecodeBlock(blocks[i], keys);
+            decrypted = i == 0
+                    ? BitSet.valueOf(_decryptedBlocks[i])
+                    : BitSetUtilities.concatenateBitSets(64 * i, decrypted, BitSet.valueOf(_decryptedBlocks[i]));
+        }
+
+        return decrypted.toByteArray();
+    }
+
     public static void main(String[] args) {
         String plain = "Let's go to the beach";
         String key = "mflwkero";
 
         Des des = new Des();
         byte[] permutedKey = Des.CreateSingleKey(key.getBytes());
-        des.Encrypt(plain.getBytes(), permutedKey);
+        byte[] encrypted = des.Encrypt(plain.getBytes(), permutedKey);
+        byte[] decrypted = des.Decrypt(encrypted, permutedKey);
     }
 
 }
