@@ -4,6 +4,12 @@ public class TripleDes {
     Des[] _desInstances = new Des[]{new Des(), new Des(), new Des()};
     byte[][] _desKeys = new byte[3][56];
 
+    /**
+     * Perform 3-DES Encryption
+     * @param plain
+     * @param inputKeys
+     * @return Crypt of 3-DES
+     */
     public byte[] Encrypt(byte[] plain, byte[][] inputKeys) {
         for (int i = 0; i < 3; i++) {
             _desKeys[i] = Des.CreateSingleKey(inputKeys[i]);
@@ -17,6 +23,12 @@ public class TripleDes {
         return crypt;
     }
 
+    /**
+     * Perform 3-DES Decryption.
+     * @param crypt
+     * @param inputKeys
+     * @return Plain after decryption
+     */
     public byte[] Decrypt(byte[] crypt, byte[][] inputKeys) {
         for (int i = 0; i < 3; i++) {
             _desKeys[i] = Des.CreateSingleKey(inputKeys[i]);

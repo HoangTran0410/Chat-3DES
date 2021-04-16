@@ -43,8 +43,10 @@ public class BitSetUtilities {
     }
 
     /**
+     * Concatenate a list of BitSet.
+     * The first of the bunch will be at the right-most, so be cautious with the order of params.
      * https://stackoverflow.com/questions/10495953/java-bitset-which-allows-easy-concatenation-of-bitsets
-     *
+     * @param size Size of the existing BitSet (the first BitSet in the list)
      * @return
      */
     public static BitSet concatenateBitSets(int size, BitSet... bitSets) {

@@ -5,9 +5,7 @@
  */
 package TripleDES;
 
-import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 
 /**
  * @author Hoang Tran < hoang at 99.hoangtran@gmail.com >
@@ -18,7 +16,6 @@ public class Des {
     public byte[][] _cryptBlocks;
     public byte[][] _encryptedBlocks;
     public byte[][] _decryptedBlocks;
-    public byte[] _plain;
     public byte[] _encrypted; // ENCRYPT RESULT
     public byte[] _decrypted; // DECRYPT RESULT
 
@@ -28,8 +25,20 @@ public class Des {
         return _encrypted;
     }
 
+    public byte[] getDecrypted() {
+        return _decrypted;
+    }
+
     // Public Methods
 
+    /**
+     * Create a single key for encryption and decryption.
+     * Perform by accepting a plain input key, then permute it through PC-1.
+     * Triple-DES needs this to generate 3 keys for each phase.
+     *
+     * @param originalKey Can be a human-input or instructed key
+     * @return Permuted key for use
+     */
     public static byte[] CreateSingleKey(byte[] originalKey) {
         // Permutes original key => Becomes 56-bit key
         BitSet originalKeyBits = BitSet.valueOf(originalKey);
@@ -37,13 +46,27 @@ public class Des {
         return permutedKeyBits.toByteArray();
     }
 
+    /**
+     * Perform DES Encryption.
+     *
+     * @param plain
+     * @param key
+     * @return Crypt of DES
+     */
     public byte[] Encrypt(byte[] plain, byte[] key) {
         _keys = this.InitializeSubKeys(key);
         _plainBlocks = this.GenerateBlocks(plain);
-        _encrypted =  this.EncodeBlocks(_plainBlocks, _keys);
+        _encrypted = this.EncodeBlocks(_plainBlocks, _keys);
         return this._encrypted;
     }
 
+    /**
+     * Perform DES Decryption.
+     *
+     * @param crypt
+     * @param key
+     * @return Plain after decryption
+     */
     public byte[] Decrypt(byte[] crypt, byte[] key) {
         _keys = this.InitializeSubKeys(key);
         _cryptBlocks = this.GenerateBlocks(crypt);
@@ -170,6 +193,14 @@ public class Des {
 
     // Private Logic Methods
 
+    /**
+     * Perform Permutation on a BitSet through a permute table.
+     * Example: "the 57th bit of the original key K becomes the first bit of the permuted key K+"
+     *
+     * @param originalBitSet
+     * @param permuteTable
+     * @return Permuted BitSet
+     */
     private static BitSet Permute(BitSet originalBitSet, byte[] permuteTable) {
         BitSet newBitSet = new BitSet();
 
@@ -181,6 +212,13 @@ public class Des {
         return newBitSet;
     }
 
+    /**
+     * Perform Substitution through a supplied S-Box
+     *
+     * @param originalBitSet
+     * @param subBox
+     * @return Substituted BitSet
+     */
     private static BitSet Substitute(BitSet originalBitSet, byte[][] subBox) {
         BitSet rowBits = new BitSet();
         BitSet colBits = new BitSet();
@@ -192,10 +230,16 @@ public class Des {
 
         byte sBoxValue = subBox[BitSetUtilities.getSingleValue(rowBits)][BitSetUtilities.getSingleValue(colBits)];
 
-        BitSet newBitSet = BitSet.valueOf(new byte[] {sBoxValue});
+        BitSet newBitSet = BitSet.valueOf(new byte[]{sBoxValue});
         return newBitSet;
     }
 
+    /**
+     * Create 16 keys for 16 rounds from a permuted key
+     *
+     * @param key A permuted key (56-bit)
+     * @return Array of keys stored in BitSet
+     */
     private BitSet[] InitializeSubKeys(byte[] key) {
         BitSet keyBits = BitSet.valueOf(key);
 
@@ -224,6 +268,13 @@ public class Des {
         return finalKeys;
     }
 
+    /**
+     * Divide the initial input into 8-byte (64-bit) blocks.
+     * Empty bit will be replaced with Padding Bit, "0"
+     *
+     * @param inputBits
+     * @return List of Blocks generated
+     */
     private byte[][] GenerateBlocks(byte[] inputBits) {
         byte[][] blocks = new byte[(int) Math.ceil(inputBits.length * 1.0 / ByteSize)][];
         int blockIndex = 0;
@@ -246,6 +297,13 @@ public class Des {
         return blocks;
     }
 
+    /**
+     * The "f" function called in Des's Main Flow.
+     *
+     * @param rightBits
+     * @param key
+     * @return Result of the function is a 32-bit BitSet
+     */
     private BitSet DesFunction(BitSet rightBits, BitSet key) {
         BitSet bitOf48s;
         BitSet bitOf32s = new BitSet();
@@ -275,7 +333,15 @@ public class Des {
         return bitOf32s;
     }
 
-    private byte[] EncodeBlock(byte[] block, BitSet[] keys) {
+    /**
+     * DES's main flow of encrypting/decrypting a single Block
+     * As seen in the graph below:
+     * https://www.researchgate.net/profile/Muhammad-Mushtaq-20/publication/321587376/figure/fig4/AS:568581112987648@1512571709096/Data-Encryption-Standard-DES-Algorithm.png
+     * @param block
+     * @param keys
+     * @return A single block of Encrypted/Decrypted
+     */
+    private byte[] DesMainFlow(byte[] block, BitSet[] keys) {
         BitSet bits = BitSet.valueOf(block);
 
         // Permute block (retains size of 64-bit)
@@ -301,21 +367,18 @@ public class Des {
         return bits.toByteArray();
     }
 
-    private byte[] DecodeBlock(byte[] block, BitSet[] keys) {
-        BitSet[] reversedKeys = new BitSet[17];
-        // Decode is essentially Encode with SubKeys in reversed order
-        for (int i = 1; i <= 16; i++) {
-            reversedKeys[i] = keys[16 - i + 1];
-        }
-        return EncodeBlock(block, reversedKeys);
-    }
-
+    /**
+     * Perform encrypt n blocks of input.
+     * @param blocks
+     * @param keys
+     * @return encrypted blocks concatenated into a single byte[]
+     */
     private byte[] EncodeBlocks(byte[][] blocks, BitSet[] keys) {
         this._encryptedBlocks = new byte[blocks.length][8];
         BitSet encrypted = new BitSet();
 
         for (int i = 0; i < blocks.length; i++) {
-            this._encryptedBlocks[i] = EncodeBlock(blocks[i], keys);
+            this._encryptedBlocks[i] = DesMainFlow(blocks[i], keys);
             encrypted = i == 0
                     ? BitSet.valueOf(_encryptedBlocks[i])
                     : BitSetUtilities.concatenateBitSets(64 * i, encrypted, BitSet.valueOf(_encryptedBlocks[i]));
@@ -324,12 +387,24 @@ public class Des {
         return encrypted.toByteArray();
     }
 
+    /**
+     * Perform decrypt n blocks of input.
+     * @param blocks
+     * @param keys
+     * @return decrypted blocks concatenated into a single byte[]
+     */
     private byte[] DecodeBlocks(byte[][] blocks, BitSet[] keys) {
         this._decryptedBlocks = new byte[blocks.length][8];
         BitSet decrypted = new BitSet();
 
+        // Decode is essentially Encode with SubKeys in reversed order => create reversedKeys
+        BitSet[] reversedKeys = new BitSet[17];
+        for (int i = 1; i <= 16; i++) {
+            reversedKeys[i] = keys[16 - i + 1];
+        }
+
         for (int i = 0; i < blocks.length; i++) {
-            this._decryptedBlocks[i] = DecodeBlock(blocks[i], keys);
+            this._decryptedBlocks[i] = DesMainFlow(blocks[i], reversedKeys);
             decrypted = i == 0
                     ? BitSet.valueOf(_decryptedBlocks[i])
                     : BitSetUtilities.concatenateBitSets(64 * i, decrypted, BitSet.valueOf(_decryptedBlocks[i]));
