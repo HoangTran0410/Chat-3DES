@@ -33,10 +33,15 @@ public class Des {
     }
 
     public byte[] Encrypt(byte[] plain, byte[] key) {
-        this.InitializeSubKeys(key);
-        this.InitializeBlocksFromPlain(plain);
-        this.EncodeBlocks();
+        _keys = this.InitializeSubKeys(key);
+        _plainBlocks = this.GenerateBlocks(plain);
+        _encrypted =  this.EncodeBlocks(_plainBlocks, _keys);
         return this._encrypted;
+    }
+
+    public byte[] Decrypt(byte[] crypt, byte[] key) {
+        _keys = this.InitializeSubKeys(key);
+        return null;
     }
 
     // Private Constants
@@ -184,7 +189,7 @@ public class Des {
         return newBitSet;
     }
 
-    private void InitializeSubKeys(byte[] key) {
+    private BitSet[] InitializeSubKeys(byte[] key) {
         BitSet keyBits = BitSet.valueOf(key);
 
         // Split into C0, D0, which is Left half and Right half respectively, into 28-bit Keys
@@ -209,32 +214,29 @@ public class Des {
             finalKeys[i] = Des.Permute(concatCiDi, PERMUTED_CHOICE_2); // Becomes 48-bit key
         }
 
-        // Save Keys
-        this._keys = finalKeys;
+        return finalKeys;
     }
 
-    private void InitializeBlocksFromPlain(byte[] plain) {
-        this._plain = plain;
-
-        byte[][] blocks = new byte[(int) Math.ceil(plain.length * 1.0 / ByteSize)][];
+    private byte[][] GenerateBlocks(byte[] inputBits) {
+        byte[][] blocks = new byte[(int) Math.ceil(inputBits.length * 1.0 / ByteSize)][];
         int blockIndex = 0;
         int bitIndex = 0;
-        for (int i = 0; i < plain.length; i++) {
+        for (int i = 0; i < inputBits.length; i++) {
             if (bitIndex == 0) {
                 blocks[blockIndex] = new byte[ByteSize];
             }
-            blocks[blockIndex][bitIndex++] = plain[i];
+            blocks[blockIndex][bitIndex++] = inputBits[i];
             if (bitIndex >= ByteSize) {
                 blockIndex++;
                 bitIndex = 0;
             }
         }
-        for (int i = plain.length; i % ByteSize == 0; i++) {
+        for (int i = inputBits.length; i % ByteSize == 0; i++) {
             // Padding
             blocks[blockIndex][bitIndex++] = 0;
         }
 
-        this._plainBlocks = blocks;
+        return blocks;
     }
 
     private BitSet DesFunction(BitSet rightBits, BitSet key) {
@@ -266,7 +268,7 @@ public class Des {
         return bitOf32s;
     }
 
-    private byte[] EncodeBlock(byte[] block) {
+    private byte[] EncodeBlock(byte[] block, BitSet[] keys) {
         BitSet bits = BitSet.valueOf(block);
 
         // Permute block (retains size of 64-bit)
@@ -282,7 +284,7 @@ public class Des {
         for (int i = 1; i <= 16; i++) {
             leftL[i] = rightR[i - 1];
             rightR[i] = BitSet.valueOf(leftL[i - 1].toByteArray());
-            rightR[i].xor(DesFunction(rightR[i - 1], this._keys[i]));
+            rightR[i].xor(DesFunction(rightR[i - 1], keys[i]));
         }
 
         // Concat into R16L16, then permute through IP-1
@@ -292,18 +294,18 @@ public class Des {
         return bits.toByteArray();
     }
 
-    private void EncodeBlocks() {
-        this._encryptedBlocks = new byte[this._plainBlocks.length][8];
+    private byte[] EncodeBlocks(byte[][] blocks, BitSet[] keys) {
+        this._encryptedBlocks = new byte[blocks.length][8];
         BitSet encrypted = new BitSet();
 
-        for (int i = 0; i < this._plainBlocks.length; i++) {
-            this._encryptedBlocks[i] = EncodeBlock(this._plainBlocks[i]);
+        for (int i = 0; i < blocks.length; i++) {
+            this._encryptedBlocks[i] = EncodeBlock(blocks[i], keys);
             encrypted = i == 0
                     ? BitSet.valueOf(_encryptedBlocks[i])
                     : BitSetUtilities.concatenateBitSets(64 * i, encrypted, BitSet.valueOf(_encryptedBlocks[i]));
         }
 
-        this._encrypted = encrypted.toByteArray();
+        return encrypted.toByteArray();
     }
 
     public static void main(String[] args) {
