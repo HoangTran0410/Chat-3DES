@@ -5,6 +5,7 @@
  */
 package TripleDES;
 
+import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 
 /**
@@ -421,6 +422,11 @@ public class Des {
         byte[] permutedKey = Des.CreateSingleKey(key.getBytes());
         byte[] encrypted = des.Encrypt(plain.getBytes(), permutedKey);
         byte[] decrypted = des.Decrypt(encrypted, permutedKey);
+        
+        System.out.println(plain);
+        
+        // https://mkyong.com/java/how-do-convert-byte-array-to-string-in-java/
+        System.out.println(new String(decrypted, StandardCharsets.UTF_8));
     }
 
 }

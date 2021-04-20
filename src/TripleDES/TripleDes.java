@@ -1,5 +1,7 @@
 package TripleDES;
 
+import java.nio.charset.StandardCharsets;
+
 public class TripleDes {
     Des[] _desInstances = new Des[]{new Des(), new Des(), new Des()};
     byte[][] _desKeys = new byte[3][56];
@@ -45,8 +47,12 @@ public class TripleDes {
     public static void main(String[] args) {
         TripleDes tripleDes = new TripleDes();
         byte[][] inputKeys = new byte[][] {"m8oemrkt".getBytes(), "!ms_leot".getBytes(), "2mgl@ao!".getBytes()};
-        String plain = "Let's go to the beach";
+        String plain = "Let's go cờ hó to the beach";
         byte[] encrypted = tripleDes.Encrypt(plain.getBytes(), inputKeys);
         byte[] decrypted = tripleDes.Decrypt(encrypted, inputKeys);
+        
+        System.out.println(plain);
+        System.out.println(new String(encrypted, StandardCharsets.UTF_8));
+        System.out.println(new String(decrypted, StandardCharsets.UTF_8));
     }
 }
