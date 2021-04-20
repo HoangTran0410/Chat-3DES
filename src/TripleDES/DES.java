@@ -11,41 +11,18 @@ import java.util.BitSet;
 /**
  * @author Hoang Tran < hoang at 99.hoangtran@gmail.com >
  */
-public class Des {
-    public BitSet[] _keys;
-    public byte[][] _plainBlocks;
-    public byte[][] _cryptBlocks;
-    public byte[][] _encryptedBlocks;
-    public byte[][] _decryptedBlocks;
-    public byte[] _encrypted; // ENCRYPT RESULT
-    public byte[] _decrypted; // DECRYPT RESULT
-
-    // Public Getters
-
-    public byte[] getEncrypted() {
-        return _encrypted;
+public class DES {
+    BitSet[] _keys;
+    
+    public DES(String key) {
+        _keys = createKeyFromString(key);
     }
-
-    public byte[] getDecrypted() {
-        return _decrypted;
+    
+    public void test(String plain) {
+        // TODO do some magic here
     }
 
     // Public Methods
-
-    /**
-     * Create a single key for encryption and decryption.
-     * Perform by accepting a plain input key, then permute it through PC-1.
-     * Triple-DES needs this to generate 3 keys for each phase.
-     *
-     * @param originalKey Can be a human-input or instructed key
-     * @return Permuted key for use
-     */
-    public static byte[] CreateSingleKey(byte[] originalKey) {
-        // Permutes original key => Becomes 56-bit key
-        BitSet originalKeyBits = BitSet.valueOf(originalKey);
-        BitSet permutedKeyBits = Des.Permute(originalKeyBits, PERMUTED_CHOICE_1);
-        return permutedKeyBits.toByteArray();
-    }
 
     /**
      * Perform DES Encryption.
@@ -54,11 +31,9 @@ public class Des {
      * @param key
      * @return Crypt of DES
      */
-    public byte[] Encrypt(byte[] plain, byte[] key) {
-        _keys = this.InitializeSubKeys(key);
-        _plainBlocks = this.GenerateBlocks(plain);
-        _encrypted = this.EncodeBlocks(_plainBlocks, _keys);
-        return this._encrypted;
+    public byte[] encrypt(byte[] plain) {
+        byte[][] plainBlocks = generateBlocks(plain);
+        return encodeBlocks(plainBlocks, _keys);
     }
 
     /**
@@ -68,11 +43,9 @@ public class Des {
      * @param key
      * @return Plain after decryption
      */
-    public byte[] Decrypt(byte[] crypt, byte[] key) {
-        _keys = this.InitializeSubKeys(key);
-        _cryptBlocks = this.GenerateBlocks(crypt);
-        _decrypted = this.DecodeBlocks(_cryptBlocks, _keys);
-        return this._decrypted;
+    public byte[] decrypt(byte[] crypt) {
+        byte[][] cryptBlocks = generateBlocks(crypt);
+        return decodeBlocks(cryptBlocks, _keys);
     }
 
     // Private Constants
@@ -192,7 +165,26 @@ public class Des {
     private static final int KeySize = 64;
     private static final byte[] KEY_LEFTSHIFT_DISTANCES = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 
-    // Private Logic Methods
+    // Private static Logic Methods
+    
+    private static BitSet[] createKeyFromString(String strKey) {
+        return initializeSubKeys(createSingleKey(strKey.getBytes()));
+    }
+    
+    /**
+     * Create a single key for encryption and decryption.
+     * Perform by accepting a plain input key, then permute it through PC-1.
+     * Triple-DES needs this to generate 3 keys for each phase.
+     *
+     * @param originalKey Can be a human-input or instructed key
+     * @return Permuted key for use
+     */
+    private static byte[] createSingleKey(byte[] originalKey) {
+        // Permutes original key => Becomes 56-bit key
+        BitSet originalKeyBits = BitSet.valueOf(originalKey);
+        BitSet permutedKeyBits = permute(originalKeyBits, PERMUTED_CHOICE_1);
+        return permutedKeyBits.toByteArray();
+    }
 
     /**
      * Perform Permutation on a BitSet through a permute table.
@@ -202,7 +194,7 @@ public class Des {
      * @param permuteTable
      * @return Permuted BitSet
      */
-    private static BitSet Permute(BitSet originalBitSet, byte[] permuteTable) {
+    private static BitSet permute(BitSet originalBitSet, byte[] permuteTable) {
         BitSet newBitSet = new BitSet();
 
         for (int i = 0; i < permuteTable.length; i++) {
@@ -220,7 +212,7 @@ public class Des {
      * @param subBox
      * @return Substituted BitSet
      */
-    private static BitSet Substitute(BitSet originalBitSet, byte[][] subBox) {
+    private static BitSet substitute(BitSet originalBitSet, byte[][] subBox) {
         BitSet rowBits = new BitSet();
         BitSet colBits = new BitSet();
         rowBits.set(0, originalBitSet.get(0)); // left-most bit
@@ -241,7 +233,7 @@ public class Des {
      * @param key A permuted key (56-bit)
      * @return Array of keys stored in BitSet
      */
-    private BitSet[] InitializeSubKeys(byte[] key) {
+    private static BitSet[] initializeSubKeys(byte[] key) {
         BitSet keyBits = BitSet.valueOf(key);
 
         // Split into C0, D0, which is Left half and Right half respectively, into 28-bit Keys
@@ -263,7 +255,7 @@ public class Des {
                     28, rightD[i], leftC[i]
             );
 
-            finalKeys[i] = Des.Permute(concatCiDi, PERMUTED_CHOICE_2); // Becomes 48-bit key
+            finalKeys[i] = permute(concatCiDi, PERMUTED_CHOICE_2); // Becomes 48-bit key
         }
 
         return finalKeys;
@@ -276,7 +268,7 @@ public class Des {
      * @param inputBits
      * @return List of Blocks generated
      */
-    private byte[][] GenerateBlocks(byte[] inputBits) {
+    private static byte[][] generateBlocks(byte[] inputBits) {
         byte[][] blocks = new byte[(int) Math.ceil(inputBits.length * 1.0 / ByteSize)][];
         int blockIndex = 0;
         int bitIndex = 0;
@@ -299,18 +291,18 @@ public class Des {
     }
 
     /**
-     * The "f" function called in Des's Main Flow.
+     * The "f" function called in DES's Main Flow.
      *
      * @param rightBits
      * @param key
      * @return Result of the function is a 32-bit BitSet
      */
-    private BitSet DesFunction(BitSet rightBits, BitSet key) {
+    private static BitSet desFunction(BitSet rightBits, BitSet key) {
         BitSet bitOf48s;
         BitSet bitOf32s = new BitSet();
 
         // Expand from 32-bit to 48 bit
-        bitOf48s = Des.Permute(rightBits, EXPANSION);
+        bitOf48s = permute(rightBits, EXPANSION);
 
         // XOR with key (48-bit)
         bitOf48s.xor(key);
@@ -320,7 +312,7 @@ public class Des {
             // Goal: Transform each 6 bits of 48-bit into 4 bits of 32-bit, by permuting with S-box[i]
             int fromIndex = i * 6;
             int toIndex = i * 6 + 6;
-            BitSet bitOf4s = Des.Substitute(bitOf48s.get(fromIndex, toIndex), S_BOX[i]); // 6-bit into 4-bit
+            BitSet bitOf4s = substitute(bitOf48s.get(fromIndex, toIndex), S_BOX[i]); // 6-bit into 4-bit
 
             // Concat into the 32-bit BitSet
             bitOf32s = i == S_BOX.length - 1 // if is at starting point
@@ -329,7 +321,7 @@ public class Des {
         }
 
         // Permute the 32-bit BitSet with P-Permutation, retains its size
-        bitOf32s = Des.Permute(bitOf32s, P_PERMUTATION);
+        bitOf32s = permute(bitOf32s, P_PERMUTATION);
 
         return bitOf32s;
     }
@@ -342,11 +334,11 @@ public class Des {
      * @param keys
      * @return A single block of Encrypted/Decrypted
      */
-    private byte[] DesMainFlow(byte[] block, BitSet[] keys) {
+    private static byte[] desMainFlow(byte[] block, BitSet[] keys) {
         BitSet bits = BitSet.valueOf(block);
 
         // Permute block (retains size of 64-bit)
-        bits = Des.Permute(bits, INITIAL_PERMUTATION);
+        bits = permute(bits, INITIAL_PERMUTATION);
 
         // Split into Left-half L0 and Right-half R0, 32-bit each
         BitSet[] leftL = new BitSet[17];
@@ -358,12 +350,12 @@ public class Des {
         for (int i = 1; i <= 16; i++) {
             leftL[i] = rightR[i - 1];
             rightR[i] = BitSet.valueOf(leftL[i - 1].toByteArray());
-            rightR[i].xor(DesFunction(rightR[i - 1], keys[i]));
+            rightR[i].xor(desFunction(rightR[i - 1], keys[i]));
         }
 
         // Concat into R16L16, then permute through IP-1
         bits = BitSetUtilities.concatenateBitSets(32, leftL[16], rightR[16]);
-        bits = Des.Permute(bits, FINAL_PERMUTATION);
+        bits = permute(bits, FINAL_PERMUTATION);
 
         return bits.toByteArray();
     }
@@ -374,15 +366,15 @@ public class Des {
      * @param keys
      * @return encrypted blocks concatenated into a single byte[]
      */
-    private byte[] EncodeBlocks(byte[][] blocks, BitSet[] keys) {
-        this._encryptedBlocks = new byte[blocks.length][8];
+    private static byte[] encodeBlocks(byte[][] blocks, BitSet[] keys) {
+        byte[][] encryptedBlocks = new byte[blocks.length][8];
         BitSet encrypted = new BitSet();
 
         for (int i = 0; i < blocks.length; i++) {
-            this._encryptedBlocks[i] = DesMainFlow(blocks[i], keys);
+            encryptedBlocks[i] = desMainFlow(blocks[i], keys);
             encrypted = i == 0
-                    ? BitSet.valueOf(_encryptedBlocks[i])
-                    : BitSetUtilities.concatenateBitSets(64 * i, encrypted, BitSet.valueOf(_encryptedBlocks[i]));
+                    ? BitSet.valueOf(encryptedBlocks[i])
+                    : BitSetUtilities.concatenateBitSets(64 * i, encrypted, BitSet.valueOf(encryptedBlocks[i]));
         }
 
         return encrypted.toByteArray();
@@ -394,8 +386,8 @@ public class Des {
      * @param keys
      * @return decrypted blocks concatenated into a single byte[]
      */
-    private byte[] DecodeBlocks(byte[][] blocks, BitSet[] keys) {
-        this._decryptedBlocks = new byte[blocks.length][8];
+    private static byte[] decodeBlocks(byte[][] blocks, BitSet[] keys) {
+        byte[][] decryptedBlocks = new byte[blocks.length][8];
         BitSet decrypted = new BitSet();
 
         // Decode is essentially Encode with SubKeys in reversed order => create reversedKeys
@@ -405,10 +397,10 @@ public class Des {
         }
 
         for (int i = 0; i < blocks.length; i++) {
-            this._decryptedBlocks[i] = DesMainFlow(blocks[i], reversedKeys);
+            decryptedBlocks[i] = desMainFlow(blocks[i], reversedKeys);
             decrypted = i == 0
-                    ? BitSet.valueOf(_decryptedBlocks[i])
-                    : BitSetUtilities.concatenateBitSets(64 * i, decrypted, BitSet.valueOf(_decryptedBlocks[i]));
+                    ? BitSet.valueOf(decryptedBlocks[i])
+                    : BitSetUtilities.concatenateBitSets(64 * i, decrypted, BitSet.valueOf(decryptedBlocks[i]));
         }
 
         return decrypted.toByteArray();
@@ -418,15 +410,14 @@ public class Des {
         String plain = "Let's go to the beach";
         String key = "mflwkero";
 
-        Des des = new Des();
-        byte[] permutedKey = Des.CreateSingleKey(key.getBytes());
-        byte[] encrypted = des.Encrypt(plain.getBytes(), permutedKey);
-        byte[] decrypted = des.Decrypt(encrypted, permutedKey);
+        DES des = new DES(key);
+        des.test(plain);
         
-        System.out.println(plain);
+        byte[] encrypted = des.encrypt(plain.getBytes());
+        System.out.println(new String(encrypted));
         
-        // https://mkyong.com/java/how-do-convert-byte-array-to-string-in-java/
-        System.out.println(new String(decrypted, StandardCharsets.UTF_8));
+        byte[] decrypted = des.decrypt(encrypted);
+        System.out.println(new String(decrypted));
     }
 
 }
