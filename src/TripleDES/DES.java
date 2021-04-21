@@ -3,9 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package TripleDES;
+package tripleDES;
 
-import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 
 /**
@@ -18,17 +17,16 @@ public class DES {
         _keys = createKeyFromString(key);
     }
     
+    // Public Methods
+    
     public void test(String plain) {
         // TODO do some magic here
     }
-
-    // Public Methods
 
     /**
      * Perform DES Encryption.
      *
      * @param plain
-     * @param key
      * @return Crypt of DES
      */
     public byte[] encrypt(byte[] plain) {
@@ -40,7 +38,6 @@ public class DES {
      * Perform DES Decryption.
      *
      * @param crypt
-     * @param key
      * @return Plain after decryption
      */
     public byte[] decrypt(byte[] crypt) {
@@ -161,8 +158,8 @@ public class DES {
             46, 42, 50, 36, 29, 32
     };
 
-    private static final int ByteSize = 8;
-    private static final int KeySize = 64;
+    private static final int BYTE_SIZE = 8;
+    private static final int KEY_SIZE = 64;
     private static final byte[] KEY_LEFTSHIFT_DISTANCES = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 
     // Private static Logic Methods
@@ -269,20 +266,20 @@ public class DES {
      * @return List of Blocks generated
      */
     private static byte[][] generateBlocks(byte[] inputBits) {
-        byte[][] blocks = new byte[(int) Math.ceil(inputBits.length * 1.0 / ByteSize)][];
+        byte[][] blocks = new byte[(int) Math.ceil(inputBits.length * 1.0 / BYTE_SIZE)][];
         int blockIndex = 0;
         int bitIndex = 0;
         for (int i = 0; i < inputBits.length; i++) {
             if (bitIndex == 0) {
-                blocks[blockIndex] = new byte[ByteSize];
+                blocks[blockIndex] = new byte[BYTE_SIZE];
             }
             blocks[blockIndex][bitIndex++] = inputBits[i];
-            if (bitIndex >= ByteSize) {
+            if (bitIndex >= BYTE_SIZE) {
                 blockIndex++;
                 bitIndex = 0;
             }
         }
-        for (int i = inputBits.length; i % ByteSize != 0; i++) {
+        for (int i = inputBits.length; i % BYTE_SIZE != 0; i++) {
             // Padding
             blocks[blockIndex][bitIndex++] = 0;
         }
