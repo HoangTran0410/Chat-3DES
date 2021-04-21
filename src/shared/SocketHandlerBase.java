@@ -37,22 +37,16 @@ public class SocketHandlerBase {
         this.dos = new DataOutputStream(s.getOutputStream());
     }
 
-    protected String[] getReceivedData() throws IOException {
-        // receive the request from client
-        String received = dis.readUTF();
+    protected String getReceivedType(String received) {
+        return received.split(Constants.SEPARATE_MARKER)[0];
+    }
 
-        // decrypt data if needed
+    protected String decryptReceivedData(String received) throws IOException {
         if (tripleDES != null) {
             byte[] crypted = Helper.base64Decode(received);
-            received = new String(tripleDES.decrypt(crypted));
+            return new String(tripleDES.decrypt(crypted));
         }
-
-        System.out.println("RECEIVED: " + received);
-
-        // process received data
-        String[] splitted = received.split(Constants.SEPARATE_MARKER, 2);
-
-        return splitted;
+        return received;
     }
 
     protected void closeResources() {

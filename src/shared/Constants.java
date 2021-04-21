@@ -11,7 +11,11 @@ package shared;
  */
 public class Constants {
 
-    public static final String SEPARATE_MARKER = ";",
-            DES_KEY_EVENT = "DES_KEY_EVENT",
-            CHAT_EVENT = "CHAT_EVENT";
+    public static final int SERVER_PORT = 5056;
+    public static final String RSA_PRIVATEKEY_PATH = "src/server/rsa-key/privateKey";
+    public static final String RSA_PUBLICKEY_PATH = "src/server/rsa-key/publicKey";
+
+    public static final String SEPARATE_MARKER = ";";
+    public static final String CLIENT_DATA_EVENT = "CLIENT_DATA_EVENT";
+    public static final String CHAT_EVENT = "CHAT_EVENT";
 }
