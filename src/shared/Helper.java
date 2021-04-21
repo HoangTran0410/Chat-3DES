@@ -6,7 +6,9 @@
 package shared;
 
 import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
 
 /**
  *
@@ -14,6 +16,7 @@ import java.util.Base64;
  */
 public class Helper {
 
+    // -------------------------- Stream Data --------------------------
     public static String createClientData(String clientName, String key1, String key2, String key3) {
         return String.join(Constants.SEPARATE_MARKER,
                 Constants.CLIENT_DATA_EVENT, // 0
@@ -52,21 +55,30 @@ public class Helper {
         };
     }
 
+    // -------------------------- Date Time --------------------------
+    // https://www.javatpoint.com/java-get-current-date
+    static final SimpleDateFormat DATETIME_FORMATTER = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
+
+    public static String getCurrentDateTime() {
+        Date date = new Date();
+        return DATETIME_FORMATTER.format(date);
+    }
+
     // -------------------------- Random String --------------------------
     static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    static SecureRandom rnd = new SecureRandom();
+    static final SecureRandom RND = new SecureRandom();
 
     // https://stackoverflow.com/a/157202/11898496
     public static String randomString(int len) {
         StringBuilder sb = new StringBuilder(len);
         for (int i = 0; i < len; i++) {
-            sb.append(AB.charAt(rnd.nextInt(AB.length())));
+            sb.append(AB.charAt(RND.nextInt(AB.length())));
         }
         return sb.toString();
     }
 
     public static String randomString(int minLen, int maxLen) {
-        int len = (int) (minLen + rnd.nextDouble() * (maxLen - minLen));
+        int len = (int) (minLen + RND.nextDouble() * (maxLen - minLen));
         return randomString(len);
     }
 

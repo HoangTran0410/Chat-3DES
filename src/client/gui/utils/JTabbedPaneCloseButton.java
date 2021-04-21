@@ -1,4 +1,4 @@
-package shared.utils;
+package client.gui.utils;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalIconFactory;

@@ -114,4 +114,7 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
 
     }
 
+    public String getName() {
+        return name;
+    }
 }
