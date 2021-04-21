@@ -29,13 +29,13 @@ public class Friend {
 
     public void addChat(String sender, String chatContent) {
         String dateTime = Helper.getCurrentDateTime();
-        _chatHistory.add(sender + " - " + dateTime + "\n> " + chatContent + "\n");
+        _chatHistory.add(
+                dateTime + " - "
+                + sender + "\n> "
+                + Helper.wrapString(chatContent, 55) + "\n"
+        );
 
-        int contentLen = chatContent.length();
-        int maxLen = 20;
-
-        _lastChat = chatContent.substring(0, Math.min(contentLen, maxLen));
-        _lastChat += contentLen > maxLen ? "..." : "";
+        _lastChat = Helper.limitString(chatContent, 20);
     }
 
     public String getChatHistory() {

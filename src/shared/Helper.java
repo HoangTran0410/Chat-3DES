@@ -55,9 +55,28 @@ public class Helper {
         };
     }
 
+    // -------------------------- String --------------------------
+    // https://stackoverflow.com/a/4212726/11898496
+    public static String wrapString(String str, int maxLen) {
+        StringBuilder sb = new StringBuilder(str);
+
+        int i = 0;
+        while (i + maxLen < sb.length() && (i = sb.lastIndexOf(" ", i + maxLen)) != -1) {
+            sb.replace(i, i + 1, "\n");
+        }
+
+        return sb.toString();
+    }
+
+    public static String limitString(String str, int maxLen) {
+        String ret = str.substring(0, Math.min(str.length(), maxLen));
+        ret += str.length() > maxLen ? "..." : "";
+        return ret;
+    }
+
     // -------------------------- Date Time --------------------------
     // https://www.javatpoint.com/java-get-current-date
-    static final SimpleDateFormat DATETIME_FORMATTER = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
+    static final SimpleDateFormat DATETIME_FORMATTER = new SimpleDateFormat("HH:mm:ss");
 
     public static String getCurrentDateTime() {
         Date date = new Date();
