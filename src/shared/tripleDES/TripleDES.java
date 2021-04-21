@@ -1,4 +1,4 @@
-package tripleDES;
+package shared.tripleDES;
 
 import java.util.Base64;
 

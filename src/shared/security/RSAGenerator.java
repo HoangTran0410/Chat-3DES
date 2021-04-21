@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package utils.security;
+package shared.security;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -21,18 +21,15 @@ import java.security.PublicKey;
 // https://stackjava.com/demo/code-java-vi-du-ma-hoa-giai-ma-voi-rsa.html
 public class RSAGenerator {
 
-    public static final String PUBLIC_KEY_FILE = "rsa_keypair/publicKey";
-    public static final String PRIVATE_KEY_FILE = "rsa_keypair/privateKey";
-    public static String basePath = "";
-
+    private String folderPath;
     private KeyPairGenerator keyGen;
     private KeyPair pair;
     private PrivateKey privateKey;
     private PublicKey publicKey;
 
-    public RSAGenerator(int keylength, String basePath) {
+    public RSAGenerator(int keylength, String folderPath) {
         try {
-            this.basePath = basePath;
+            this.folderPath = folderPath;
             this.keyGen = KeyPairGenerator.getInstance("RSA");
             this.keyGen.initialize(keylength);
         } catch (NoSuchAlgorithmException e) {
@@ -58,7 +55,7 @@ public class RSAGenerator {
         try {
             File f = new File(path);
             f.getParentFile().mkdirs();
-            
+
             FileOutputStream fos = new FileOutputStream(f);
             fos.write(key);
             fos.flush();
@@ -72,15 +69,15 @@ public class RSAGenerator {
         try {
             System.out.println("Starting generate...");
             this.createKeys();
-            this.writeToFile(basePath + PUBLIC_KEY_FILE, this.getPublicKey().getEncoded());
-            this.writeToFile(basePath + PRIVATE_KEY_FILE, this.getPrivateKey().getEncoded());
-            System.out.println("Generated to '" + basePath + "' !");
+            this.writeToFile(folderPath + "publicKey", this.getPublicKey().getEncoded());
+            this.writeToFile(folderPath + "privateKey", this.getPrivateKey().getEncoded());
+            System.out.println("Generated to '" + folderPath + "' !");
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
     }
 
     public static void main(String[] args) {
-        new RSAGenerator(1024, "src/").generateKeysToFile();
+        new RSAGenerator(1024, "src/server/rsa-key/").generateKeysToFile();
     }
 }

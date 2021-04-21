@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package GUI;
+package gui;
 
-import Utils.JTabbedPaneCloseButton;
-import Utils.LookAndFeel;
+import shared.utils.JTabbedPaneCloseButton;
+import shared.utils.LookAndFeel;
 import java.awt.HeadlessException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
