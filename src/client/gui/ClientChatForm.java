@@ -70,7 +70,7 @@ public class ClientChatForm extends javax.swing.JFrame {
                 if (f != null) {
                     txChatHistory.setText(f.getChatHistory());
                     currentFriend = f;
-                    currentFriend.uneenCount = 0;
+                    currentFriend.unSeenCount = 0;
                 }
             }
         });
@@ -158,7 +158,7 @@ public class ClientChatForm extends javax.swing.JFrame {
         if (isCurrentFriend) {
             txChatHistory.setText(currentFriend.getChatHistory());
         } else {
-            f.uneenCount++;
+            f.unSeenCount++;
 
             // https://stackoverflow.com/a/4921271/11898496
             SwingUtilities.invokeLater(lFriends::updateUI);

@@ -69,9 +69,9 @@ public class FriendRenderer extends JPanel implements ListCellRenderer<Friend> {
         }
 
         // seen
-        if (friend.uneenCount != 0) {
+        if (friend.unSeenCount != 0) {
             lbName.setForeground(Color.red);
-            lbName.setText(friend.getName() + " (" + friend.uneenCount + ")");
+            lbName.setText(friend.getName() + " (" + friend.unSeenCount + ")");
         } else {
             lbName.setForeground(Color.BLACK);
         }
