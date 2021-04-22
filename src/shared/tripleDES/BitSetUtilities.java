@@ -1,7 +1,5 @@
-package TripleDES;
+package shared.tripleDES;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.BitSet;
 
 public class BitSetUtilities {
