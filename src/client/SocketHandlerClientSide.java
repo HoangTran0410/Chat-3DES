@@ -36,7 +36,7 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
     }
 
     public void connect(String addr, int port, String name) throws Exception {
-        this.myName = name;
+        myName = name;
 
         // getting ip 
         InetAddress ip = InetAddress.getByName(addr);
@@ -57,7 +57,7 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
         listener.start();
 
         // security
-        sendClientData(name);
+        sendClientData();
     }
 
     private void listen() {
@@ -86,7 +86,7 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
         closeResources();
     }
 
-    private void sendClientData(String name) throws Exception {
+    private void sendClientData() throws Exception {
         System.out.println("Preparing client data...");
         guiContainer.setLoadingState(true, "Đang chuẩn bị dữ liệu...");
 
@@ -99,7 +99,7 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
         tripleDES = new TripleDES(key1, key2, key3);
 
         // prepare client data with format "event_key;myName;key1;key2;key3"
-        String clientData = Helper.pack(Constants.CLIENT_DATA_EVENT, name, key1, key2, key3);
+        String clientData = Helper.pack(Constants.CLIENT_DATA_EVENT, myName, key1, key2, key3);
 
         // encrypt 3des-keys using rsa with server public-key 
         RSA clientSideRSA = new RSA().preparePublicKey(Constants.RSA_PUBLICKEY_PATH);
