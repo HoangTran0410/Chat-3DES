@@ -5,6 +5,7 @@
  */
 package client;
 
+import client.gui.ClientChatForm;
 import shared.tripleDES.TripleDES;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import shared.Constants;
@@ -25,16 +27,23 @@ import shared.security.RSA;
  */
 public class SocketHandlerClientSide extends SocketHandlerBase {
 
+    ClientChatForm guiContainer;
     Thread listener = null;
-    String name;
+    String myName;
+
+    public SocketHandlerClientSide(ClientChatForm container) {
+        guiContainer = container;
+    }
 
     public void connect(String addr, int port, String name) throws Exception {
-        this.name = name;
+        this.myName = name;
 
         // getting ip 
         InetAddress ip = InetAddress.getByName(addr);
 
         // establish the connection with server port 
+        System.out.println("Connecting to " + ip + ":" + port + "...");
+        guiContainer.setLoadingState(true, "Đang kết nối...");
         socket = new Socket();
         socket.connect(new InetSocketAddress(ip, port), 4000);
         System.out.println("Connected to " + ip + ":" + port + ", localport:" + socket.getLocalPort());
@@ -64,6 +73,8 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
                 // check event
                 if (type.equals(Constants.CHAT_EVENT)) {
                     onReceiveChatData(decrypted);
+                } else if (type.equals(Constants.ONLINE_LIST_EVENT)) {
+                    onReceiveOnlineList(decrypted);
                 }
 
             } catch (IOException ex) {
@@ -77,6 +88,7 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
 
     private void sendClientData(String name) throws Exception {
         System.out.println("Preparing client data...");
+        guiContainer.setLoadingState(true, "Đang chuẩn bị dữ liệu...");
 
         // create new key
         String key1 = Helper.randomString(5, 10);
@@ -86,8 +98,8 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
         // init 3Des instance
         tripleDES = new TripleDES(key1, key2, key3);
 
-        // prepare client data with format "event_key;name;key1;key2;key3"
-        String clientData = Helper.createClientData(name, key1, key2, key3);
+        // prepare client data with format "event_key;myName;key1;key2;key3"
+        String clientData = Helper.pack(Constants.CLIENT_DATA_EVENT, name, key1, key2, key3);
 
         // encrypt 3des-keys using rsa with server public-key 
         RSA clientSideRSA = new RSA().preparePublicKey(Constants.RSA_PUBLICKEY_PATH);
@@ -98,23 +110,48 @@ public class SocketHandlerClientSide extends SocketHandlerBase {
         sendPureData(clientDataEncryptedStr);
 
         System.out.println("SENT CLIENT DATA: " + clientData);
+        guiContainer.setLoadingState(true, "Đang tải danh sách bạn bè...");
     }
 
     public void sendChat(String receiver, String content) {
-        String chatData = Helper.createChatData(name, receiver, content);
+        String chatData = Helper.pack(Constants.CHAT_EVENT, myName, receiver, content);
         sendData(chatData);
         System.out.println("SENT CHAT DATA: " + chatData);
     }
 
     private void onReceiveChatData(String decrypted) {
-        System.out.println("RECEIVE CHAT DATA: " + decrypted);
+        System.out.println("RECEIVED chat data: " + decrypted);
+
+        ArrayList<String> chatData = Helper.unpack(decrypted);
+        String senderName = chatData.get(1);
+        String receiverName = chatData.get(2);
+        String chatContent = chatData.get(3);
+
+        String friendName = null;
+
+        if (senderName.equals(myName)) {
+            friendName = receiverName; // mình là người gửi
+        } else if (receiverName.equals(myName)) {
+            friendName = senderName; // mình là người nhận
+        }
+
+        if (friendName != null) {
+            guiContainer.addChat(friendName, senderName, chatContent);
+        } else {
+            System.err.println("-ERROR: sender/receiver not valid. " + senderName + "/" + receiverName);
+        }
     }
 
-    public void getAllOtherClientNames() {
+    private void onReceiveOnlineList(String decrypted) {
+        System.out.println("RECEIVED online list: " + decrypted);
 
+        ArrayList<String> onlineData = Helper.unpack(decrypted);
+        onlineData.remove(0); // remove event name
+        guiContainer.updateOnlineList(onlineData);
+        guiContainer.setLoadingState(false, "");
     }
 
     public String getName() {
-        return name;
+        return myName;
     }
 }

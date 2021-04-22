@@ -18,4 +18,5 @@ public class Constants {
     public static final String SEPARATE_MARKER = ";";
     public static final String CLIENT_DATA_EVENT = "CLIENT_DATA_EVENT";
     public static final String CHAT_EVENT = "CHAT_EVENT";
+    public static final String ONLINE_LIST_EVENT = "ONLINE_LIST_EVENT";
 }

@@ -7,8 +7,11 @@ package shared;
 
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 /**
  *
@@ -17,42 +20,22 @@ import java.util.Date;
 public class Helper {
 
     // -------------------------- Stream Data --------------------------
-    public static String createClientData(String clientName, String key1, String key2, String key3) {
-        return String.join(Constants.SEPARATE_MARKER,
-                Constants.CLIENT_DATA_EVENT, // 0
-                clientName, // 1
-                key1, // 2
-                key2, // 3
-                key3 // 4
-        );
+    /* 
+        "CLIENT_DATA_EVENT;clientName;key1;key2;key3"
+        "CHAT_EVENT;senderName;receiverName;chatContent"
+        "ONLINE_LIST_EVENT;onlineName_1;onlineName_2;....;onlineName_n"
+     */
+    // https://viettuts.vn/java-new-features/varargs-trong-java
+    public static String pack(String eventName, String... data) {
+        return eventName + Constants.SEPARATE_MARKER + String.join(Constants.SEPARATE_MARKER, data);
     }
 
-    public static String[] readClientData(String joinedStr) {
-        String[] splitted = joinedStr.split(Constants.SEPARATE_MARKER);
-        return new String[]{
-            splitted[1], // client name
-            splitted[2], // key1
-            splitted[3], // key2
-            splitted[4] // key3
-        };
+    public static String pack(String eventName, ArrayList<String> data) {
+        return eventName + Constants.SEPARATE_MARKER + String.join(Constants.SEPARATE_MARKER, data);
     }
 
-    public static String createChatData(String sender, String receiver, String content) {
-        return String.join(Constants.SEPARATE_MARKER,
-                Constants.CHAT_EVENT, // 0
-                sender, // 1
-                receiver, // 2
-                content // 3
-        );
-    }
-
-    public static String[] readChatData(String joinedStr) {
-        String[] splitted = joinedStr.split(Constants.SEPARATE_MARKER);
-        return new String[]{
-            splitted[1], // sender
-            splitted[2], // receiver
-            splitted[3] // content
-        };
+    public static ArrayList<String> unpack(String packed) {
+        return new ArrayList<>(Arrays.asList(packed.split(Constants.SEPARATE_MARKER)));
     }
 
     // -------------------------- String --------------------------

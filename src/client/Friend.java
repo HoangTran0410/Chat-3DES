@@ -17,8 +17,10 @@ public class Friend {
     String _name;
     String _lastChat;
     ArrayList<String> _chatHistory;
+    public int uneenCount;
 
     public Friend(String name) {
+        uneenCount = 0;
         _name = name;
         _lastChat = "online";
         _chatHistory = new ArrayList<>();

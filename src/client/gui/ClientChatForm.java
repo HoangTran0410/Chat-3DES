@@ -7,12 +7,14 @@ package client.gui;
 
 import client.Friend;
 import client.SocketHandlerClientSide;
-import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.text.DefaultCaret;
 import shared.Constants;
 
 /**
@@ -32,21 +34,27 @@ public class ClientChatForm extends javax.swing.JFrame {
     public ClientChatForm() {
         try {
             initComponents();
+            setTitle("Chat-3DES");
+            setVisible(true);
             setLocationRelativeTo(null);
 
-            initSocket();
             initJListFriends();
             initChatArea();
+
+            initSocket();
         } catch (Exception ex) {
             Logger.getLogger(ClientChatForm.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(this, "Lỗi " + ex.getMessage());
         }
     }
 
+    // -------------------------- Initialize --------------------------
     private void initSocket() throws Exception {
         String name = JOptionPane.showInputDialog("Tên của bạn?", "Hoang");
 
-        socketHandler = new SocketHandlerClientSide();
+        lbUserName.setText(name);
+
+        socketHandler = new SocketHandlerClientSide(this);
         socketHandler.connect("localhost", Constants.SERVER_PORT, name);
     }
 
@@ -59,22 +67,27 @@ public class ClientChatForm extends javax.swing.JFrame {
         lFriends.addListSelectionListener((ListSelectionEvent arg0) -> {
             if (!arg0.getValueIsAdjusting()) {
                 Friend f = lFriends.getSelectedValue();
-                txChatHistory.setText(f.getChatHistory());
-
-                currentFriend = f;
+                if (f != null) {
+                    txChatHistory.setText(f.getChatHistory());
+                    currentFriend = f;
+                    currentFriend.uneenCount = 0;
+                }
             }
         });
-
-        listFriendsModel.addElement(new Friend("Thu Hien"));
-        listFriendsModel.addElement(new Friend("Van Hoang"));
     }
 
     private void initChatArea() {
+        // on press Enter
         txChatInput.addActionListener((ae) -> {
             sendChat();
         });
+
+        // https://stackoverflow.com/a/9000922/11898496
+        DefaultCaret caret = (DefaultCaret) txChatHistory.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
     }
 
+    // -------------------------- Chat area --------------------------
     private void sendChat() {
         if (currentFriend == null) {
             JOptionPane.showMessageDialog(this, "Chưa chọn bạn bè nào");
@@ -83,12 +96,78 @@ public class ClientChatForm extends javax.swing.JFrame {
 
         String sender = socketHandler.getName();
         String content = txChatInput.getText();
-        currentFriend.addChat(sender, content);
 
-        txChatHistory.setText(currentFriend.getChatHistory());
+        socketHandler.sendChat(currentFriend.getName(), content);
+
         txChatInput.setText("");
+//        currentFriend.addChat(sender, content);
+    }
 
-        lFriends.updateUI();
+    // -------------------------- Socket events --------------------------
+    public void updateOnlineList(ArrayList<String> onlineNames) {
+        // remove my name
+        onlineNames.removeIf(name -> name.equals(socketHandler.getName()));
+
+        // remove if not found in onlineNames
+        for (int i = listFriendsModel.getSize() - 1; i >= 0; i--) {
+            boolean found = false;
+            String fname = listFriendsModel.get(i).getName();
+            for (String oname : onlineNames) {
+                if (fname.equals(oname)) {
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                // current friend offline
+                if (fname.equals(currentFriend.getName())) {
+                    txChatHistory.setText(txChatHistory.getText() + "\n- " + fname + " ĐÃ THOÁT");
+                    currentFriend = null;
+                }
+                listFriendsModel.remove(i);
+            }
+        }
+
+        // add name if not found in listFriendsModel
+        onlineNames.forEach((name) -> {
+            boolean found = false;
+            for (int i = 0; i < listFriendsModel.getSize(); i++) {
+                if (listFriendsModel.get(i).getName().equals(name)) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                listFriendsModel.addElement(new Friend(name));
+            }
+        });
+    }
+
+    public void addChat(String friendName, String senderName, String content) {
+        Friend f = null;
+        for (int i = 0; i < listFriendsModel.getSize(); i++) {
+            Friend fi = listFriendsModel.elementAt(i);
+            if (fi.getName().equals(friendName)) {
+                fi.addChat(senderName, content);
+                f = fi;
+                break;
+            }
+        }
+
+        boolean isCurrentFriend = currentFriend != null && currentFriend == f;
+
+        if (isCurrentFriend) {
+            txChatHistory.setText(currentFriend.getChatHistory());
+        } else {
+            f.uneenCount++;
+
+            // https://stackoverflow.com/a/4921271/11898496
+            SwingUtilities.invokeLater(lFriends::updateUI);
+        }
+    }
+
+    public void setLoadingState(boolean visible, String text) {
+        lbLoading.setText(text);
+        pbLoading.setVisible(visible);
     }
 
     /**
@@ -100,6 +179,7 @@ public class ClientChatForm extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         txChatHistory = new javax.swing.JTextArea();
@@ -107,8 +187,22 @@ public class ClientChatForm extends javax.swing.JFrame {
         btnSendChat = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         lbUserName = new javax.swing.JLabel();
+        jPanel4 = new javax.swing.JPanel();
+        lbLoading = new javax.swing.JLabel();
+        pbLoading = new javax.swing.JProgressBar();
         jScrollPane1 = new javax.swing.JScrollPane();
         lFriends = new javax.swing.JList<>();
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -135,14 +229,14 @@ public class ClientChatForm extends javax.swing.JFrame {
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(txChatInput)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnSendChat))
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE))
+                        .addComponent(btnSendChat)))
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
@@ -160,6 +254,32 @@ public class ClientChatForm extends javax.swing.JFrame {
         lbUserName.setIcon(new javax.swing.ImageIcon(getClass().getResource("/client/gui/assets/icons8_male_user_32px.png"))); // NOI18N
         lbUserName.setText("User Name");
 
+        lbLoading.setText("Đang tải");
+        lbLoading.setName(""); // NOI18N
+
+        pbLoading.setValue(100);
+        pbLoading.setIndeterminate(true);
+
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(pbLoading, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lbLoading, javax.swing.GroupLayout.Alignment.TRAILING)))
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                .addContainerGap(15, Short.MAX_VALUE)
+                .addComponent(lbLoading)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(pbLoading, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
@@ -167,14 +287,17 @@ public class ClientChatForm extends javax.swing.JFrame {
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(lbUserName, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(lbUserName, javax.swing.GroupLayout.DEFAULT_SIZE, 43, Short.MAX_VALUE)
+                .addComponent(lbUserName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
+            .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Bạn bè online:"));
@@ -256,12 +379,16 @@ public class ClientChatForm extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnSendChat;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JList<Friend> lFriends;
+    private javax.swing.JLabel lbLoading;
     private javax.swing.JLabel lbUserName;
+    private javax.swing.JProgressBar pbLoading;
     private javax.swing.JTextArea txChatHistory;
     private javax.swing.JTextField txChatInput;
     // End of variables declaration//GEN-END:variables

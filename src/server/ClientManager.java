@@ -19,6 +19,16 @@ public class ClientManager {
         clients = new ArrayList<>();
     }
 
+    public ArrayList<String> getOnlineName() {
+        ArrayList<String> ret = new ArrayList<>();
+        clients.forEach((c) -> {
+            if (c.clientName != null) {
+                ret.add(c.clientName);
+            }
+        });
+        return ret;
+    }
+
     public boolean add(SocketHandlerServerSide c) {
         if (!clients.contains(c)) {
             clients.add(c);

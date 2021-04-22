@@ -38,8 +38,8 @@ public class FriendRenderer extends JPanel implements ListCellRenderer<Friend> {
         panelText.add(lbLastChat);
         add(lbIcon, BorderLayout.WEST);
         add(panelText, BorderLayout.CENTER);
-
-        lbLastChat.setForeground(new Color(150, 150, 150));
+        
+        lbLastChat.setForeground(Color.GRAY);
 
         setOpaque(true);
         lbIcon.setOpaque(true);
@@ -66,6 +66,14 @@ public class FriendRenderer extends JPanel implements ListCellRenderer<Friend> {
             lbName.setBackground(Color.white);
             lbLastChat.setBackground(Color.white);
             setBackground(Color.white);
+        }
+
+        // seen
+        if (friend.uneenCount != 0) {
+            lbName.setForeground(Color.red);
+            lbName.setText(friend.getName() + " (" + friend.uneenCount + ")");
+        } else {
+            lbName.setForeground(Color.BLACK);
         }
 
         return this;
