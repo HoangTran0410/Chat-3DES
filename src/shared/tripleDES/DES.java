@@ -14,11 +14,12 @@ public class DES {
     BitSet[] _keys;
     
     public DES(String key) {
-        _keys = createKeyFromString(key);
+        byte[] permutedKey = createPermutedKey(key.getBytes());
+        _keys = createSubKeys(permutedKey);
     }
     
     // Public Methods
-    
+
     public void test(String plain) {
         // TODO do some magic here
     }
@@ -159,24 +160,20 @@ public class DES {
     };
 
     private static final int BYTE_SIZE = 8;
-    private static final int KEY_SIZE = 64;
+    private static final int BLOCK_SIZE = 64;
     private static final byte[] KEY_LEFTSHIFT_DISTANCES = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 
     // Private static Logic Methods
-    
-    private static BitSet[] createKeyFromString(String strKey) {
-        return initializeSubKeys(createSingleKey(strKey.getBytes()));
-    }
-    
+
     /**
-     * Create a single key for encryption and decryption.
+     * Create a single permuted key for encryption and decryption.
      * Perform by accepting a plain input key, then permute it through PC-1.
      * Triple-DES needs this to generate 3 keys for each phase.
      *
      * @param originalKey Can be a human-input or instructed key
      * @return Permuted key for use
      */
-    private static byte[] createSingleKey(byte[] originalKey) {
+    private static byte[] createPermutedKey(byte[] originalKey) {
         // Permutes original key => Becomes 56-bit key
         BitSet originalKeyBits = BitSet.valueOf(originalKey);
         BitSet permutedKeyBits = permute(originalKeyBits, PERMUTED_CHOICE_1);
@@ -228,9 +225,9 @@ public class DES {
      * Create 16 keys for 16 rounds from a permuted key
      *
      * @param key A permuted key (56-bit)
-     * @return Array of keys stored in BitSet
+     * @return Array of 48-bit keys stored in BitSet
      */
-    private static BitSet[] initializeSubKeys(byte[] key) {
+    private static BitSet[] createSubKeys(byte[] key) {
         BitSet keyBits = BitSet.valueOf(key);
 
         // Split into C0, D0, which is Left half and Right half respectively, into 28-bit Keys
@@ -371,7 +368,7 @@ public class DES {
             encryptedBlocks[i] = desMainFlow(blocks[i], keys);
             encrypted = i == 0
                     ? BitSet.valueOf(encryptedBlocks[i])
-                    : BitSetUtilities.concatenateBitSets(64 * i, encrypted, BitSet.valueOf(encryptedBlocks[i]));
+                    : BitSetUtilities.concatenateBitSets(BLOCK_SIZE * i, encrypted, BitSet.valueOf(encryptedBlocks[i]));
         }
 
         return encrypted.toByteArray();
@@ -397,7 +394,7 @@ public class DES {
             decryptedBlocks[i] = desMainFlow(blocks[i], reversedKeys);
             decrypted = i == 0
                     ? BitSet.valueOf(decryptedBlocks[i])
-                    : BitSetUtilities.concatenateBitSets(64 * i, decrypted, BitSet.valueOf(decryptedBlocks[i]));
+                    : BitSetUtilities.concatenateBitSets(BLOCK_SIZE * i, decrypted, BitSet.valueOf(decryptedBlocks[i]));
         }
 
         return decrypted.toByteArray();
